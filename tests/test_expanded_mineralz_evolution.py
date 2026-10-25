@@ -35,7 +35,7 @@ class ExpandedEvolutionTests(unittest.TestCase):
         ET.SubElement(ET.SubElement(sec,'Key',name='Opaque'),'Value',string='unchanged')
         # A partial encoded role count is preserved byte-for-byte on unrelated edits.
         ET.SubElement(ET.SubElement(root.find('Section'),'Key',name='a'),'Value',int='403')
-        b=bank(sign(root));self.assertFalse(b.errors);self.assertEqual(len(b.state.values),67)
+        b=bank(sign(root));self.assertFalse(b.errors);self.assertEqual(len(b.state.values),69)
         self.assertEqual(b.render(b.state.clone())[0],b.raw)
         t=b.state.clone();t.values['NIVO']=200*4096
         raw=b.render(t)[0];out=ET.fromstring(raw)
@@ -97,7 +97,7 @@ class ExpandedEvolutionTests(unittest.TestCase):
         self.assertIsNone(value(out,'kev','ks6'))
         b=bank(raw);t=b.state.clone();t.values['challenge_0']=False
         self.assertIsNone(value(ET.fromstring(b.render(t)[0]),'kev','ks0'))
-        for key,value_ in [('challenge_6',True),('PHR',100),('ims',35),('skn','ds0')]:
+        for key,value_ in [('challenge_6',True)]:
             t=b.state.clone();t.values[key]=value_
             with self.assertRaisesRegex(Exception,'read-only'):b.render(t)
 

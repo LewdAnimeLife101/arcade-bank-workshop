@@ -23,7 +23,7 @@ def render(s,target):
     kw={}
     if s['profile']=='reign':kw={'hero_levels':s['levels'],'hero_evolutions':s['evos']}
     result=s['bank'].render(target,**kw)
-    raw=result[0];effective=result[1] if s['profile'] in ('unity','probes_zealot_2118') else target
+    raw=result[0];effective=result[1] if s['profile'] in ('unity','probes_zealot_2118','mineralz_evolution_258') else target
     fresh=construct(s['profile'],raw,s['name'],s['player'],s['author'])
     if fresh.state!=effective:raise ValueError('Output state did not pass read-back verification.')
     return raw,effective,result[-1]
@@ -69,11 +69,21 @@ def describe(s):
             from zrc_editor.guidance import enriched_profile
             profile=enriched_profile(p)
         for spec in profile['fields']:
+            if pid=='mineralz_evolution_258' and spec['key']=='skn':
+                from mze_editor.cosmetics import field as cosmetic_field
+                spec=cosmetic_field(t.values)
             key=(spec['section'],spec['key']) if pid=='reign' else spec['key']
             if key not in t.values:continue
             path=['values',key];kind=spec.get('type','string' if isinstance(t.values[key],str) else 'int');kind='bool' if kind=='flag' else kind
             if pid=='reign' and spec.get('unit_key'):continue
             add(path,spec['label'],spec.get('group',spec.get('category','Progress')),kind,spec.get('min',0),spec.get('max'),spec.get('description',spec.get('help','')),options=spec.get('options'),readonly=not spec.get('editable',True))
+            if pid=='mineralz_evolution_258' and spec['key'] in ('PR','PHR2','im','is','imval'):
+                rows[-1]['automatic']=True
+        if pid=='mineralz_evolution_258':
+            from mze_editor.prestige import PERKS,curve_rank
+            rank=curve_rank(t.values['PR'])
+            for required,name,description in PERKS:
+                rows.append({'id':'perk:'+name,'label':name,'group':'Prestige perk choices','kind':'info','value':'Available' if rank>=required else 'Requires prestige '+str(required),'description':description+' Choose one perk per match in-game; this is availability, not a saved active-perk switch.','readonly':True,'automatic':True})
         if pid=='mineralz':
             from mineralz_editor.core import skin_options,talent_points
             add(['skin'],'Selected Probe skin','Customization',minimum=1,maximum=33,description='Cosmetic selection only. Each option lists its requirement; changing it does not grant requirements.',options=skin_options(t,p))
@@ -196,6 +206,10 @@ def dispatch(req):
                 if not soul.type:raise ValueError('Choose a jewel tier before maximizing this slot.')
                 cap=next(x['stats2_to5_cap'] for x in s['bank'].souls_profile['tiers'] if x['code']==soul.type)
                 soul.stats[:5]=[cap*4096*x for x in [10,1,1,1,1]]
+            elif s['profile']=='mineralz_evolution_258' and action in ('prestige_perks','prestige_rewards'):
+                rank=12 if action=='prestige_perks' else 100
+                s['work'].values['PHR']=max(s['work'].values['PHR'],rank)
+                notes=['Prestige rank raised to at least '+str(rank)+'. All 14 perk choices are available from rank 12; choose one per match in-game. Rank 100 reaches the highest identified prestige milestone. Separate achievement flags and other progression are preserved.']
             else:raise ValueError('No audited preset for this action.')
         raw,effective,render_notes=render(s,s['work']);s['work']=effective
         if before[0]!=s['work']:s['undo'].append(before)

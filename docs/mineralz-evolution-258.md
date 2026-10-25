@@ -5,7 +5,7 @@ Map 1/344126, cached publication 2.58. Verified archive SHA-256:
 Evidence is recovered `SCRIPTS.galaxy` plus its descriptive catalog. No published-match
 acceptance test is claimed. The latest live publication has not been checked.
 
-The expanded profile has **67 displayed fields, 58 editable and 9 read-only**.
+The profile exposes saved progression and logical completion controls, plus 14 derived prestige-perk availability descriptions. Check values are calculated automatically; the account-dependent Imperius donor flag remains preserved.
 All bank get/set/key-existence/load call sites were inventoried, including dynamic
 role, achievement, challenge-skin and building-skin families. Original unknown
 sections and keys stay unchanged. No original bank is bundled in the editor.
@@ -35,10 +35,10 @@ options can be preserved but cannot be newly assigned through this editor.
 
 | Data | Reason |
 |---|---|
-| PHR,PR,PHR2 | Displayed read-only. Loader requires inverse count(PR)+PHR2=PHR and rejects PHR2>0 with PHR<42 (2600–2612). Award recurrence uses (PR+39)×1.2 for first42, then incrementsPHR2 (15155–15181). Exact native fixed-point multiplication/division has not been corroborated for this recurrence. Do not emit rank-only edits. |
-| im,ims,is,imval | Displayed read-only. Impossible night/completion/skin checks use player-dependent native square roots, modulo and rounding (2547–2555,2672–2696,6282–6285,6400–6403,9913–9915,12555–12562). The rejection block at2693–2696 is commented out, but checks still gate unlocks; absence of rejection is not proof of safe regeneration. |
+| PHR,PR,PHR2 | Prestige rank editable 0–100; PR and PHR2 regenerated together. 100 is the highest identified unlock milestone, not a claimed game hard cap. Loader requires inverse count(PR)+PHR2=PHR and rejects PHR2>0 with PHR<42 (2600–2612). Award recurrence uses (PR+39)×1.2 for first42, then incrementsPHR2 (15155–15181). All 146 isolated native prestige checks passed. Editing rank does not replay the in-game purchase reset of level/wins. Source-valid noncanonical original PR remains untouched. |
+| im,ims,is,imval | Impossible highest night and victory/DNA completion are editable logical controls. Account-specific im/is/imval values are regenerated automatically using native-verified Q12 math (2547–2555,2672–2696,6282–6285,6400–6403,9913–9915,12555–12562). 30 complete synthetic cases and 21 rounding cases passed; six deliberate zero-divisor cases are unsupported. Highest-night ceiling52427 is an arithmetic storage boundary, not a normal-play wave limit. Normal victory is35; the selection summary only displays completed when ims==35. Final skin also requires level200 and both exact tokens. The old loader rejection block at2693–2696 is commented out; a mismatching original record is reported rather than treated as proof of corruption. Zero-divisor accounts keep other edits available. |
 | kev/ks6 | Imperius donor entitlement flag, read-only. Description3900–3905; other eligibility originates from runtime account data. |
-| Sec/skn | Displayed read-only. Saved cosmetic can select prestige, personal, event, challenge or donor families, each with separate runtime eligibility (2148–2247). Supported unlocks can be changed and their appearance selected in-game. Existing value preserved. |
+| Sec/skn | Editable dropdown for eligible default, prestige and challenge skins. Options refresh after previewing prerequisite edits. Selection and prerequisites are checked together, including lowering rank or removing a selected challenge flag. Existing unknown/personal/event/direct-donor selections are preserved, not newly granted (2148–2247). |
 | reset/cs1 | Migration marker; generated only when enabling Godlisk, otherwise preserved. |
 | VERSION,VERS | Reset/startup metadata, never a publication discriminator. VERSION only reset/admin writers; no loader read. Preserved. |
 | CODID | Map-side rejection marker. If17, editing is blocked; not cleared or fabricated. |
@@ -55,3 +55,33 @@ rejection, all23 achievement values, challenge migration, donor/read-only enforc
 safe numeric boundaries, Nightmare/Hell marker updates and retained completion.
 Hash vectors were also independently evaluated with JavaScript signed-int32 math.
 These checks do not establish published-game acceptance.
+
+## Prestige perk choices
+
+Rank 12 unlocks all 14 choices. The map stores prestige rank, not a bank-side
+selected-perk field. `gv_prestigeChoose` is a match-local selection, so the editor
+shows availability and descriptions and provides **Unlock prestige perk choices**
+(rank at least12) and **Set prestige rank to 100** (rank at least100).
+Neither button activates every perk at once or changes separately saved achievement flags. Passive role bonuses cap at40;
+prestige cosmetics unlock at10/20/30/40/50; the final identified achievement and
+secret-worker milestone are100. Existing progression is not reduced by presets.
+
+There is one shared weighted WINS counter and per-role counters, not a separate
+win count for every difficulty. Easy has a completion marker but no saved highest
+night. The editor exposes the real storage instead of creating unsupported fields.
+
+## Native verification, 25 October 2026
+
+The isolated diagnostic ABEMZEProbe20261025 used a Survival2 archive as a map
+container, replacing its gameplay script and bank list with Evolution2.58
+formula tests. This explains its inherited loading-screen name; it did not run
+Survival's bank logic. It wrote only a dedicated scratch bank. All76 original
+Arcade-bank hashes remained unchanged. This verifies native arithmetic, **not**
+loading an edited bank in the published Evolution map.
+
+Prestige:146/146 checks. Impossible:30 complete synthetic account/night cases,
+six expected zero-divisor exclusions, all nine constants and intermediate values,
+and21 signed rounding cases. Native Round ties toward positive infinity. The
+final constant intentionally skips its immediate predecessor; both details are
+covered by regression tests. Sanitized synthetic native vectors are in
+`tests/fixtures/mze_native_impossible.json`; no real player bank is published.
