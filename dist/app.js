@@ -39,16 +39,16 @@ function render(){
  $('status-badge').textContent=current?(current.data.demo?'EXAMPLE':'VALIDATED ORIGINAL'):'LOCAL ONLY';
  if(!current)return;
  $('identity').textContent='Player: '+current.data.player+'  /  Map author: '+current.data.author+'  /  '+current.account;
- const old=$('group').value;const groups=[...new Set(current.data.fields.map(f=>f.group))];$('group').replaceChildren(...groups.map(g=>option(g,g)));if(groups.includes(old))$('group').value=old;
+ renderNavigation();
  $('warnings').replaceChildren(...[...current.data.warnings,'Offline validation does not prove acceptance in a published match.',...(profile.id==='fallen'?['Fallen World profile 0.84. Publication 0.85 can reject accounts through a map-side list; bank editing cannot remove that restriction.']:[])].map(t=>el('p',t)));
  $('replace').disabled=!current.handle||current.data.demo||current.backup;
  $('replace').title=!current.handle?'Open using a supported browser file picker or folder picker to replace the current file.':current.backup?'Backups cannot be replaced as main banks.':'';
- renderFields();renderPresets();updateDirty();
+ renderFields();renderPresets();renderEditorPage();updateDirty();
 }
 function updateDirty(){$('change-count').textContent=current?(current.pending.size+' unapplied field change(s)'+(current.data.dirty?' · validated edits staged':'')):'No pending edits';}
 function valueOf(f){return current.pending.has(f.id)?current.pending.get(f.id):f.value;}
-function renderFields(){if(!current)return;const query=$('search').value.toLowerCase(),group=$('group').value;const filtered=current.data.fields.filter(f=>(query?`${f.label} ${f.group} ${f.description}`.toLowerCase().includes(query):f.group===group));const pages=Math.max(1,Math.ceil(filtered.length/50));page=Math.min(page,pages-1);$('fields').replaceChildren();
- for(const f of filtered.slice(page*50,page*50+50)){const row=el('div',undefined,'field-row'),copy=el('div',undefined,'field-copy'),label=el('label',f.label);const inputId='field-'+current.data.fields.indexOf(f);label.htmlFor=inputId;copy.append(label);if(f.description)copy.append(el('p',f.description));if(f.max!==null&&f.max!==undefined)copy.append(el('small',`Supported range: ${f.min??0}–${f.max}`));if(f.readonly)copy.append(el('small',f.kind==='info'?'Availability from saved progress':f.automatic?'Calculated automatically':'Preserved read-only'));let input;
+function renderFields(){if(!current)return;const query=$('search').value.toLowerCase(),group=$('group').value;const filtered=current.data.fields.filter(f=>(query?`${f.label} ${f.group} ${f.description}`.toLowerCase().includes(query):f.group===group));const pages=Math.max(1,Math.ceil(filtered.length/50));page=Math.min(page,pages-1);$('fields').replaceChildren();current.ui.page=page;$('field-summary').textContent=(query?'Search results':group)+' · '+filtered.length+' fields · '+filtered.filter(f=>!f.readonly).length+' editable';
+ for(const f of filtered.slice(page*50,page*50+50)){const row=el('div',undefined,'field-row'),copy=el('div',undefined,'field-copy'),label=el('label',f.label);const inputId='field-'+current.data.fields.indexOf(f);label.htmlFor=inputId;if(query)copy.append(el('small',f.group,'field-context'));copy.append(label);if(f.description)copy.append(el('p',f.description));if(f.max!==null&&f.max!==undefined)copy.append(el('small',`Supported range: ${f.min??0}–${f.max}`));if(f.readonly)copy.append(el('small',f.kind==='info'?'Availability from saved progress':f.automatic?'Calculated automatically':'Preserved read-only'));let input;
  if(f.kind==='info'){const output=el('output',String(valueOf(f)));output.id=inputId;row.append(copy,output);if(f.action){const unlock=el('button','Unlock');unlock.onclick=()=>task(()=>preview('preset',f.action));row.append(unlock);}$('fields').append(row);continue;}
  if(f.options?.length){input=el('select');for(const o of f.options)input.append(option(String(o.value),o.label));if(!f.options.some(o=>String(o.value)===String(valueOf(f))))input.append(option(String(valueOf(f)),'Existing: '+valueOf(f)));input.value=String(valueOf(f));}
  else if(f.kind==='bool'||f.kind==='bit'){input=el('input');input.type='checkbox';input.checked=!!valueOf(f);}
@@ -56,7 +56,7 @@ function renderFields(){if(!current)return;const query=$('search').value.toLower
  else{input=el('input');input.type=['int','fixed'].includes(f.kind)?'number':'text';input.value=String(valueOf(f));if(input.type==='number'){input.min=f.min??0;if(f.max!=null)input.max=f.max;input.step=f.kind==='fixed'?'any':'1';}}
  if(input.type==='number'){input.addEventListener('input',()=>{if(input.value!==''&&Number.isFinite(Number(input.value))){if(f.max!=null&&Number(input.value)>Number(f.max))input.value=String(f.max);if(f.min!=null&&Number(input.value)<Number(f.min))input.value=String(f.min);}});}input.id=inputId;input.disabled=!!f.readonly;const stage=()=>{const v=input.type==='checkbox'?input.checked:input.value;if(String(v)===String(f.value))current.pending.delete(f.id);else current.pending.set(f.id,v);current.output=null;updateDirty();if(profile.id==='liberty'&&f.label==='Jewel tier')updateSoulLimits(f);};input.addEventListener('input',stage);input.addEventListener('change',stage);row.append(copy,input);$('fields').append(row);}
  if(!filtered.length)$('fields').append(el('p','No fields match this search.'));
- $('pagination').replaceChildren();if(pages>1){const prev=el('button','← Previous'),next=el('button','Next →');prev.disabled=page===0;next.disabled=page===pages-1;prev.onclick=()=>{page--;renderFields();};next.onclick=()=>{page++;renderFields();};$('pagination').append(prev,el('span',`${page+1} / ${pages} · ${filtered.length} fields`),next);}
+ $('pagination').replaceChildren();if(pages>1){const prev=el('button','← Previous'),next=el('button','Next →');prev.disabled=page===0;next.disabled=page===pages-1;prev.onclick=()=>{current.ui.page=--page;renderFields();};next.onclick=()=>{current.ui.page=++page;renderFields();};$('pagination').append(prev,el('span',`${page+1} / ${pages} · ${filtered.length} fields`),next);}
 }
 function updateSoulLimits(tierField){
  const tier=Number(valueOf(tierField)),cap=current.data.soulCaps?.[String(tier)]??0;
@@ -65,8 +65,46 @@ function updateSoulLimits(tierField){
  renderFields();updateDirty();
  message('Tier limits updated. Any base stats above the new tier cap were reduced in the pending preview. Effects and enhancement count were preserved.');
 }
-$('group').onchange=()=>{page=0;renderFields();renderPresets();};$('search').oninput=()=>{page=0;renderFields();};
-function renderPresets(){const bar=$('preset-bar');bar.replaceChildren();if(!current)return;const buttons=[];if(['reign','fallen'].includes(profile.id))buttons.push(['unlock','Review unlock all']);if(profile.id==='fallen'){const b=el('button','Prepare funded skill loadout');b.onclick=fundedSkills;bar.append(b);}if(profile.id==='mineralz_evolution_258')buttons.push(['unlock:all','Unlock all bank-based options'],['prestige_perks','Unlock prestige perk choices'],['prestige_rewards','Set prestige rank to 100']);if(profile.id==='reign')buttons.push(['loadouts','Review powerful loadouts'],['statistics','Review consistent statistics']);if(profile.id==='liberty'&&$('group').value.startsWith('Soul jewel '))buttons.push(['soul:'+$('group').value.split(' ').at(-1),'Max jewel stats for its tier']);for(const [action,title] of buttons){const b=el('button',title);b.onclick=()=>task(()=>preview('preset',action));bar.append(b);}}
+$('section').onchange=()=>{current.ui.category=$('section').value;current.ui.group='';current.ui.query='';current.ui.page=0;render();};
+$('group').onchange=()=>{current.ui.group=$('group').value;current.ui.page=page=0;renderFields();renderPresets();};$('search').oninput=()=>{current.ui.query=$('search').value;current.ui.page=page=0;renderFields();};
+function renderPresets(){
+ const bar=$('preset-bar');bar.replaceChildren();if(!current)return;
+ if(profile.id==='liberty'&&$('group').value.startsWith('Soul jewel ')){const b=el('button','Max base stats for this jewel');b.onclick=()=>task(()=>preview('preset','soul:'+$('group').value.split(' ').at(-1)));bar.append(b);}
+ const meta=current.data.presetCoverage||{};$('unlock-summary').textContent=meta.summary||'Apply the supported progression presets for this map.';
+ const cards=$('unlock-cards');cards.replaceChildren();
+ for(const [action,title,tag,body] of [
+  ['all_full','Unlock all','MAXIMUM PROGRESSION','Maximize supported unlocks and progression. Public records may look heavily edited.'],
+  ['all_plausible','Unlock all (with legit stats)','PLAUSIBLE PUBLIC RECORDS','Keep the supported unlocks and power while using a more restrained public-stat template. Required records and visible max levels may remain high.']]){
+  const card=el('article',undefined,'unlock-card');card.append(el('span',tag,'eyebrow'),el('h4',title));if(meta.partial)card.append(el('span','Partial coverage — see limits below','coverage-badge'));card.append(el('p',body));const button=el('button',title,action==='all_full'?'primary':'secondary');button.onclick=()=>task(()=>preview('preset',action));card.append(button);cards.append(card);
+ }
+ const coverage=$('unlock-coverage');coverage.replaceChildren(el('h4',meta.partial?'Coverage & limits':'What changes'));
+ if(meta.differences)coverage.append(el('p',meta.differences));
+ const ul=el('ul');for(const text of meta.limits||[])ul.append(el('li',text));coverage.append(ul,el('p','“Legit stats” means an authored public-record template. It does not establish earned progress or guarantee that edited stats appear legitimate.'));
+ const specific=$('map-presets');specific.replaceChildren();
+ for(const item of current.data.presetActions||[]){const card=el('article',undefined,'specific-card');card.append(el('h4',item.title),el('p',item.description));const button=el('button',item.title);button.onclick=()=>{
+   if(item.action==='funded_skills'){fundedSkills();return;}
+   if(item.action==='navigate:souls'){current.ui.view='edit';current.ui.category='Equipment & glyphs';current.ui.group='Soul jewel 1';current.ui.query='';render();return;}
+   task(()=>preview('preset',item.action));
+  };card.append(button);specific.append(card);
+ }
+ if(!specific.childElementCount)specific.append(el('p','This profile uses the two presets above. Individual unlocks remain available in Edit bank.','muted'));
+}
+function renderNavigation(){
+ const fields=current.data.fields;current.ui??={view:'edit',category:'',group:'',query:'',page:0};const ui=current.ui;
+ const categories=[...new Set(fields.map(f=>f.category||'Progress & resources'))];
+ if(!categories.includes(ui.category))ui.category=categories[0];
+ $('section').replaceChildren(...categories.map(c=>option(c,c)));$('section').value=ui.category;
+ const scoped=fields.filter(f=>(f.category||'Progress & resources')===ui.category);const groups=[...new Set(scoped.map(f=>f.group))];
+ if(!groups.includes(ui.group))ui.group=groups[0];
+ $('group').replaceChildren(...groups.map(g=>option(g,g+' ('+scoped.filter(f=>f.group===g).length+')')));$('group').value=ui.group;
+ $('search').value=ui.query;page=ui.page||0;
+}
+function renderEditorPage(){
+ if(!current)return;for(const name of ['edit','unlocks','validation']){const active=current.ui.view===name;$('page-'+name).hidden=!active;$('tab-'+name).setAttribute('aria-selected',String(active));$('tab-'+name).tabIndex=active?0:-1;}
+}
+for(const name of ['edit','unlocks','validation'])$('tab-'+name).onclick=()=>{if(current){current.ui.view=name;renderEditorPage();}};
+for(const [index,name] of ['edit','unlocks','validation'].entries())$('tab-'+name).onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();const next=['edit','unlocks','validation'][(index+(event.key==='ArrowRight'?1:2))%3];$('tab-'+next).click();$('tab-'+next).focus();}};
+
 function fundedSkills(){
  const s=current,box=modal('Funded skill loadout · two-file export');
  box.append(el('p','Ordinary Unlock all changes progression, not saved skill spending. This separate preset funds regular skills and Ascendancy, chooses affordable Special ranks and reserves points for Extras. It raises your skill and ascension levels.'));

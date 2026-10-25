@@ -64,9 +64,10 @@ ranks and the session-only Extras purchases explicitly.
 
 ## October 2026 profile expansion
 
-MineralZ Evolution 2.58 now exposes 67 fields (58 editable), covering role wins,
-achievements, challenge skins, building cosmetics and further difficulty records.
-Prestige and Impossible checks remain read-only and are not fully validated.
+MineralZ Evolution 2.58 exposes 72 logical fields (66 editable), plus named
+unlock and prestige-perk availability rows. Prestige and Impossible progression
+use the verified native arithmetic model; their dependent checks are calculated
+automatically. Difficulty-completion flags are distinct from highest-night records.
 See `docs/mineralz-evolution-258.md` for evidence and scope.
 
 Probes vs Zealot 2.118 supports ProbesvZealot2, PvsZ2GameplayOptions and
@@ -93,3 +94,24 @@ selected StarCraft II folder; it never launches shortcuts or follows their
 paths. Account IDs remain the identity used for filtering, sessions and saves.
 Duplicate display names are disambiguated; missing names fall back to IDs.
 No names or private account mappings are bundled or uploaded.
+
+
+Every profile now has **Edit bank**, **Unlock All** and **Validation** pages.
+Edit bank groups progression, heroes, skills, equipment, achievements, records,
+appearance and preserved data; search spans all fields. Reign separates known
+perks from unmapped entries and equipped glyphs from each hero's storage.
+
+The two shared unlock presets stage validated drafts only. **Unlock all** uses
+supported progression targets and generous public-record floors. **Unlock all
+(with legit stats)** uses an explicitly authored, lower public-record template
+while retaining functional prerequisites. It is not proof of earned play.
+Neither option promises literal all-max support: exclusions are listed before
+applying, including Survival 2 protection arithmetic, absent Reign carriers,
+Fallen companion allocations and external account entitlements. No natural
+maximum is invented for uncapped currencies or lifetime counters.
+
+Map-specific actions include Reign's seven progression categories, powerful
+loadouts and statistics reconciliation; Fallen's existing two-bank skills
+workflow; MineralZ Evolution menu and prestige plans; and Liberty jewel tools.
+Original-file validation, manual opening, retained folder selection, independent
+backups, freshness checking and explicit confirmed replacement remain in place.

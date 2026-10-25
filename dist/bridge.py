@@ -4,6 +4,8 @@ from pathlib import Path
 from importlib import import_module
 from arcade_editor.registry import PROFILES,get_profile,suggest
 from zwl_editor.fixed import parse_fixed,format_fixed
+from arcade_editor.editor_layout import organize
+from arcade_editor import preset_catalog
 
 sessions={}
 
@@ -76,7 +78,11 @@ def describe(s):
             if key not in t.values:continue
             path=['values',key];kind=spec.get('type','string' if isinstance(t.values[key],str) else 'int');kind='bool' if kind=='flag' else kind
             if pid=='reign' and spec.get('unit_key'):continue
-            add(path,spec['label'],spec.get('group',spec.get('category','Progress')),kind,spec.get('min',0),spec.get('max'),spec.get('description',spec.get('help','')),options=spec.get('options'),readonly=not spec.get('editable',True))
+            minimum,maximum=spec.get('min',0),spec.get('max')
+            if pid=='reign' and kind=='fixed':
+                minimum=minimum/4096 if minimum is not None else None
+                maximum=maximum/4096 if maximum is not None else None
+            add(path,spec['label'],spec.get('group',spec.get('category','Progress')),kind,minimum,maximum,spec.get('description',spec.get('help','')),options=spec.get('options'),readonly=not spec.get('editable',True))
             if pid=='mineralz_evolution_258' and spec['key'] in ('PR','PHR2','im','is','imval'):
                 rows[-1]['automatic']=True
         if pid=='mineralz_evolution_258':
@@ -106,6 +112,7 @@ def describe(s):
                 if spec.get('unit_key'):
                     rows.append({'id':f'level:{spec["hero"]}','label':spec['label'].replace('XP','level'),'group':'Hero levels','kind':'int','value':level_for_xp(t.values[spec['section'],spec['key']]),'min':1,'max':105,'options':[{'value':i,'label':f'Level {i}'} for i in range(1,106)],'description':'Synchronizes hero XP, enhancement cap and current-version migration markers.','readonly':False})
     # JSON cannot represent tuple keys; descriptor paths stay private in Python.
+    rows=organize(rows,pid,p)
     s['fields']={r['id']:r for r in rows}
     return [{k:v for k,v in r.items() if k!='path'} for r in rows]
 
@@ -143,7 +150,8 @@ def apply_edits(s,edits):
         s['work'].values['v11']=s['work'].values['v10']*4096
 
 def result(s):
-    out={'session':s['id'],'profile':s['profile'],'name':s['name'],'player':s['player'],'author':s['author'],'demo':s['demo'],'fields':describe(s),'warnings':s['bank'].warnings,'dirty':s['work']!=s['bank'].state}
+    out={'session':s['id'],'profile':s['profile'],'name':s['name'],'player':s['player'],'author':s['author'],'demo':s['demo'],'fields':describe(s),'warnings':s['bank'].warnings,'dirty':s['work']!=s['bank'].state,'presetCoverage':preset_catalog.coverage(s['profile'])}
+    out['presetActions']=preset_catalog.actions(s['profile'])
     if s['profile']=='liberty':out['soulCaps']={str(x['code']):x['stats2_to5_cap'] for x in s['bank'].souls_profile['tiers']}
     return out
 
@@ -197,7 +205,15 @@ def dispatch(req):
         apply_edits(s,req.get('edits',{}));notes=[]
         if op=='preset':
             action=req['action']
-            if s['profile']=='fallen' and action=='unlock':
+            if action in ('all_full','all_plausible'):
+                notes=preset_catalog.apply(s,action)
+            elif s['profile']=='reign' and action.startswith('reign:'):
+                from zrc_editor.presets import build_plan,CATEGORIES
+                category=action.split(':',1)[1]
+                if category not in CATEGORIES:raise ValueError('Unknown Reign unlock category.')
+                plan=build_plan(s['bank'],s['work'],levels=s['levels'],hero_evolutions=s['evos'],categories={category})
+                s['work']=plan.state;s['levels']=plan.levels;s['evos']=plan.evolutions;notes=plan.notes
+            elif s['profile']=='fallen' and action=='unlock':
                 from fwls_editor.presets import maximize
                 s['work'],notes=maximize(s['work'],s['bank'].profile)
             elif s['profile']=='reign' and action in ('unlock','loadouts','statistics'):

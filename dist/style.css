@@ -3,3 +3,27 @@
 [hidden]{display:none!important}#folder-status{display:block;margin:8px 0;color:var(--muted);line-height:1.5}#folder-status:empty{display:none}
 
 .field-row output{color:var(--mint);min-width:150px;text-align:right;font-size:13px}
+
+/* Organized editor pages and profile-aware progression plans. */
+.intro{padding:36px 0 30px}h1{font-size:44px}.orbit{font-size:94px}
+.editor-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 26px;flex-wrap:wrap}
+.editor-tabs{display:flex;gap:4px;background:#0e191e;padding:4px;border:1px solid var(--line);border-radius:8px}
+.editor-tabs button{border:0;background:transparent;color:var(--muted);font-size:12px;padding:9px 13px}
+.editor-tabs button[aria-selected=true]{background:#2c474b;color:#dbf4e5;box-shadow:inset 0 0 0 1px #47706a}
+.history-actions{display:flex;gap:7px}.history-actions button{font-size:11px;padding:7px 10px;background:transparent;color:var(--muted)}
+.tools{display:grid;grid-template-columns:minmax(140px,1fr) minmax(160px,1.2fr);gap:12px;margin-bottom:12px}
+.filter-control{min-width:0}.filter-control label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px}
+.tools .filter-control select,.tools .filter-control input{width:100%;min-width:0;font-size:12px}.search-control{grid-column:1/-1}
+.field-summary{font-size:11px;color:var(--teal);padding:8px 0 12px;border-bottom:1px solid var(--line)}.field-context{display:block;margin-bottom:3px}
+.page-heading{margin-bottom:22px}.page-heading h3{font-size:25px;font-weight:600;margin:8px 0}.page-heading p{font-size:13px;color:var(--muted);margin:0;max-width:65ch}
+.unlock-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}.unlock-card{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #42625d;border-radius:10px;padding:22px;background:linear-gradient(145deg,#203a38,#19272b)}
+.unlock-card:nth-child(2){border-color:#3c566a;background:linear-gradient(145deg,#243745,#19272b)}
+.unlock-card h4{font-size:19px;line-height:1.3;margin:13px 0 10px;font-weight:600}.unlock-card p{font-size:12px;line-height:1.65;color:#bacbd0;margin:0 0 20px}.unlock-card button{margin-top:auto;text-align:left;font-size:12px;width:100%}
+.coverage-note{margin:20px 0;padding:17px 20px;border:1px solid var(--line);border-left:3px solid #7aada0;border-radius:6px;background:#101b20;font-size:12px;color:var(--muted)}
+.coverage-note h4{margin:0 0 8px;color:var(--text);font-size:13px}.coverage-note p{margin:8px 0}.coverage-note ul{padding-left:18px;margin:10px 0}.coverage-note li{margin:6px 0}.coverage-badge{font-size:10px;color:#f2cc91;background:#3c3023;border:1px solid #78613c;border-radius:4px;padding:4px 7px;margin-bottom:12px}
+.specific-header{margin:28px 0 15px}.specific-header h3{font-size:17px;margin:0 0 5px}.specific-header p,.preset-footnote{font-size:12px;color:var(--muted);margin:0}
+.map-presets{display:grid;grid-template-columns:1fr 1fr;gap:12px}.specific-card{display:flex;flex-direction:column;align-items:flex-start;background:#192830;border:1px solid var(--line);padding:18px;border-radius:8px}
+.specific-card h4{font-size:13px;font-weight:600;margin:0 0 7px}.specific-card p{font-size:12px;color:var(--muted);margin:0 0 17px}.specific-card button{font-size:11px;margin-top:auto;color:var(--mint);background:transparent}
+.preset-footnote{margin:22px 0}.muted{color:var(--muted);font-size:12px}.savebar{margin-top:25px;padding-bottom:5px}.validation-notes{font-size:12px;color:var(--muted);line-height:1.65}.identity-details{font-size:12px;padding:15px 0;border-block:1px solid var(--line)}.identity-details summary{cursor:pointer;color:var(--teal)}
+@media(max-width:1050px){.unlock-cards,.map-presets{grid-template-columns:1fr}.editor-nav{align-items:flex-start}.unlock-card{padding:19px}.unlock-card button{width:auto}}
+@media(max-width:600px){.intro{padding:26px 6px}h1{font-size:35px}.tools{grid-template-columns:1fr}.search-control{grid-column:auto}.editor-tabs{width:100%}.editor-tabs button{flex:1;padding:9px 6px}.editor-nav{gap:10px}.history-actions{margin-left:auto}.unlock-card button{width:100%}.trust-grid{grid-template-columns:1fr}.savebar>div{width:100%}.savebar button{flex:1}}
