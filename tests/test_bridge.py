@@ -2,6 +2,7 @@
 import base64
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -9,10 +10,14 @@ import unittest
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMP = tempfile.TemporaryDirectory()
+PREPARED = os.environ.get('ARCADE_ENGINE_TEST_DIR')
+TEMP = None if PREPARED else tempfile.TemporaryDirectory()
+ENGINE_DIR = str(Path(PREPARED).resolve()) if PREPARED else TEMP.name
+if PREPARED:
+    assert Path(ENGINE_DIR).is_dir() and not any(Path(ENGINE_DIR).iterdir()), 'Prepared test engine directory must exist and be empty.'
 with zipfile.ZipFile(ROOT/'dist/engine.zip') as z:
-    z.extractall(TEMP.name)
-sys.path.insert(0, TEMP.name)
+    z.extractall(ENGINE_DIR)
+sys.path.insert(0, ENGINE_DIR)
 spec = importlib.util.spec_from_file_location('bridge', ROOT/'dist/bridge.py')
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)
