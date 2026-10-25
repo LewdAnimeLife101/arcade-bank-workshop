@@ -2,10 +2,11 @@ import {digest,replaceVerified} from './saving.mjs';
 import {currentBankCandidate,shouldScanDirectory,classify as classifyName} from './discovery.mjs';
 const $=id=>document.getElementById(id);
 const profiles=await (await fetch('profiles.json')).json();
+$('profile-count').textContent=String(profiles.length).padStart(2,'0')+' map profiles';
 let profile=profiles[0],current=null,entries=[],account='all',page=0,busy=false;
 const sessions=new Map(),selectedSessions=new Map(),requests=new Map();let sequence=0;
 const worker=new Worker('worker.js?v=2',{type:'module'});
-const ready=new Promise((resolve,reject)=>{worker.onmessage=({data})=>{if(data.ready){$('engine-state').textContent='Local engine ready';$('engine-detail').textContent='Five audited codecs · browser only';$('engine-dot').textContent='●';resolve();}else if(data.fatal){$('engine-state').textContent='Engine could not start';message(data.fatal,true);reject(Error(data.fatal));}else{const pending=requests.get(data.id);if(pending){requests.delete(data.id);data.ok?pending.resolve(data.data):pending.reject(Error(data.error));}}};worker.onerror=e=>{message('Local engine failed: '+(e.message||'Worker startup error')+' ('+(e.filename||'worker')+':'+(e.lineno||0)+')',true);reject(Error(e.message));};});
+const ready=new Promise((resolve,reject)=>{worker.onmessage=({data})=>{if(data.ready){$('engine-state').textContent='Local engine ready';$('engine-detail').textContent=profiles.length+' audited codecs · browser only';$('engine-dot').textContent='●';resolve();}else if(data.fatal){$('engine-state').textContent='Engine could not start';message(data.fatal,true);reject(Error(data.fatal));}else{const pending=requests.get(data.id);if(pending){requests.delete(data.id);data.ok?pending.resolve(data.data):pending.reject(Error(data.error));}}};worker.onerror=e=>{message('Local engine failed: '+(e.message||'Worker startup error')+' ('+(e.filename||'worker')+':'+(e.lineno||0)+')',true);reject(Error(e.message));};});
 ready.catch(()=>{});
 async function rpc(request){await ready;return new Promise((resolve,reject)=>{const id=++sequence;requests.set(id,{resolve,reject});worker.postMessage({id,request});});}
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
