@@ -29,3 +29,5 @@
 @media(max-width:600px){.intro{padding:26px 6px}h1{font-size:35px}.tools{grid-template-columns:1fr}.search-control{grid-column:auto}.editor-tabs{width:100%}.editor-tabs button{flex:1;padding:9px 6px}.editor-nav{gap:10px}.history-actions{margin-left:auto}.unlock-card button{width:100%}.trust-grid{grid-template-columns:1fr}.savebar>div{width:100%}.savebar button{flex:1}}
 
 .field-copy p.option-description{color:var(--mint);font-size:12px;line-height:1.6;margin:8px 0}.field-row select.named-effect{width:300px;max-width:45%}@media(max-width:850px){.field-row select.named-effect{width:100%;max-width:100%}}
+
+footer{flex-wrap:wrap;gap:12px}#visit-count{color:var(--teal);white-space:nowrap}

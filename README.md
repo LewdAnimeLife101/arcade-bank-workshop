@@ -18,8 +18,10 @@ data boundary. Its source is contained in the ZIP; extract it to inspect it.
 
 ## Public-data boundary
 
-There is no bank-upload endpoint, analytics, login or network request containing
-bank data. All decoding, validation and signing run in a dedicated local worker
+There is no bank-upload endpoint, login or network request containing bank data.
+A separate Abacus request counts aggregate public-site page loads; it carries
+only a fixed site counter key. Cookies, referrer, bank/account details and editor
+state are not included. The provider receives ordinary request network metadata. All decoding, validation and signing run in a dedicated local worker
 using the bundled Pyodide runtime. Synthetic examples use fictional handles.
 Original game assets, maps, personal saves and personal account lists are absent.
 The static web host still receives ordinary asset requests and visitor network
@@ -115,3 +117,12 @@ loadouts and statistics reconciliation; Fallen's existing two-bank skills
 workflow; MineralZ Evolution menu and prestige plans; and Liberty jewel tools.
 Original-file validation, manual opening, retained folder selection, independent
 backups, freshness checking and explicit confirmed replacement remain in place.
+
+
+The footer shows **Total visits**, starting 25 October 2026. It counts page loads,
+including repeat visits and refreshes, rather than unique people. Localhost only
+reads the public total; other preview hosts are inactive. There are no historical
+counts to import. Ad blockers, network failures and public counter manipulation
+can affect this approximate total. Counter failure never blocks the editor.
+No external JavaScript is loaded and no counter administration secret is bundled.
+Counter API documentation: https://v2.jasoncameron.dev/abacus
