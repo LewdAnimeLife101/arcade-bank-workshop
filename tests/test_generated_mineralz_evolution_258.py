@@ -79,9 +79,34 @@ class GeneratedEvolutionTests(unittest.TestCase):
         low_mismatch=altered(changes={"NIVEXP":"1225"})
         accepted=self.call(op="open",profile="mineralz_evolution_258",raw=low_mismatch,name="Banks.SC2Bank",player="1-S2-1-1234567",author="1-S2-1-7654321")
         self.assertEqual(next(x for x in accepted["fields"] if x["label"]=="Probe level")["value"],"1")
-        for raw in (altered(remove="NIVO"),altered(changes={"VERSION":"5"}),altered(changes={"NIVO":"51","NIVEXP":"1225"}),altered(changes={"NIGHTNMAR":"35","XPNB":"57925","XPNQ":"0"})):
+        for raw in (altered(remove="NIVO"),altered(changes={"NIVO":"51","NIVEXP":"1225"}),altered(changes={"NIGHTNMAR":"35","XPNB":"57925","XPNQ":"0"})):
             response=json.loads(bridge.handle(json.dumps({"op":"open","profile":"mineralz_evolution_258","raw":raw,"name":"Banks.SC2Bank","player":"1-S2-1-1234567","author":"1-S2-1-7654321"})))
             self.assertFalse(response["ok"])
+    def test_normal_save_without_reset_version_or_unearned_difficulty_keys(self):
+        # Source 2.58 reads no VERSION key; reset/admin writers alone set it.
+        # Exercise non-demo opening, not a shortcut into the generated fixture.
+        from mze_editor.demo import demo_bytes
+        from zrc_editor.core import signature_for
+        import xml.etree.ElementTree as ET
+        root=ET.fromstring(demo_bytes());sec=root.find("Section")
+        for node in list(sec):
+            if node.get("name") in {"VERSION","NIGHTNMAR","XPNB","XPNQ","HL","HAL","HLO"}:sec.remove(node)
+        def signed():
+            root.find("Signature").set("value",signature_for(root,"1-S2-1-1234567","1-S2-1-7654321","Banks"))
+            return base64.b64encode(ET.tostring(root,encoding="utf-8")).decode()
+        raw=signed()
+        opened=self.call(op="open",profile="mineralz_evolution_258",raw=raw,name="Banks.SC2Bank",player="1-S2-1-1234567",author="1-S2-1-7654321")
+        self.assertEqual(self.call(op="preview",session=opened['session'])['output'],raw)
+        field=next(f for f in opened['fields'] if f['label']=='Probe level')
+        edited=self.call(op="preview",session=opened['session'],edits={field['id']:'51'})
+        _,values=self.values(base64.b64decode(edited['output']))
+        self.assertEqual(values['NIVEXP'],'62424')
+        self.assertFalse({'VERSION','NIGHTNMAR','HL'} & set(values))
+        # An existing reset-history key is opaque and stays unchanged.
+        ET.SubElement(ET.SubElement(sec,'Key',name='VERSION'),'Value',fixed='5')
+        with_version=self.call(op="open",profile="mineralz_evolution_258",raw=signed(),name="Banks.SC2Bank",player="1-S2-1-1234567",author="1-S2-1-7654321")
+        output=self.call(op="preview",session=with_version['session'])
+        self.assertEqual(self.values(base64.b64decode(output['output']))[1]['VERSION'],'5')
     def test_profile_has_separate_main_and_backup_registration(self):
         profiles=json.loads((ROOT/"dist"/"profiles.json").read_text(encoding="utf-8")); p=next(x for x in profiles if x["id"]=="mineralz_evolution_258")
         self.assertEqual(p["mainNames"],["Banks"]); self.assertEqual(p["nativeBackupNames"],["Banks"])
