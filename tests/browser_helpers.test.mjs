@@ -4,10 +4,54 @@ import {readFile} from 'node:fs/promises';
 import {fileIdentity,classify,currentBankCandidate,shouldScanDirectory} from '../dist/discovery.mjs';
 import {replaceVerified} from '../dist/saving.mjs';
 import {FolderSelection} from '../dist/folders.mjs';
+import {accountShortcut,accountName,accountLabels,addAccountName,isAccountShortcut} from '../dist/account-names.mjs';
 const profiles=JSON.parse(await readFile(new URL('../dist/profiles.json',import.meta.url)));
 const bytes=text=>new TextEncoder().encode(text);
 
 function directory(name,children){return {name,kind:'directory',async *entries(){for(const child of children)yield [child.name,child];}};}
+function shortcutFixture(target,{unicode=false,split=false}={}){
+  const header=unicode?36:28,encoding=unicode?'utf16le':'latin1';
+  const base=Buffer.from((split?'C:\\Users\\':target)+'\0',encoding);
+  const suffix=Buffer.from((split?target.slice(9):'')+'\0',encoding);
+  const info=Buffer.alloc(header+base.length+suffix.length);
+  info.writeUInt32LE(info.length,0);info.writeUInt32LE(header,4);info.writeUInt32LE(1,8);
+  info.writeUInt32LE(header,unicode?28:16);info.writeUInt32LE(header+base.length,unicode?32:24);
+  base.copy(info,header);suffix.copy(info,header+base.length);
+  const head=Buffer.alloc(76);head.writeUInt32LE(76);head.set([1,20,2,0,0,0,0,0,192,0,0,0,0,0,0,70],4);head.writeUInt32LE(2,20);
+  return Buffer.concat([head,info]);
+}
+test('account names use exact shortcut targets, including split ANSI and Unicode paths',()=>{
+  const target='C:\\Users\\Example\\Documents\\StarCraft II\\Accounts\\100\\1-S2-1-1234567';
+  for(const options of [{},{split:true},{unicode:true}]){
+    const result=accountShortcut(shortcutFixture(target,options),'Test_Player_123@1.lnk');
+    assert.deepEqual(result,{account:'1-S2-1-1234567 · 100',name:'Test_Player',region:'1'});
+  }
+  assert.equal(isAccountShortcut('Documents/StarCraft II','Test_123@1.lnk'),true);
+  assert.equal(isAccountShortcut('StarCraft II/Backup','Test_123@1.lnk'),false);
+  assert.equal(accountShortcut(shortcutFixture(target),'Test_123@2.lnk'),null);
+  assert.equal(accountShortcut(shortcutFixture(target+'\\Banks'),'Test_123@1.lnk'),null);
+  const malformed=shortcutFixture(target);malformed.writeUInt32LE(999999,76);
+  assert.equal(accountShortcut(malformed,'Test_123@1.lnk'),null);
+  assert.equal(accountShortcut(new Uint8Array(8),'Test_123@1.lnk'),null);
+});
+test('names remain display labels: duplicate names and regions never merge account identity',()=>{
+  const names=new Map(),keys=['1-S2-1-1234567 · 100','2-S2-1-2345678 · 100','1-S2-1-3456789 · 200'];
+  for(const account of keys)addAccountName(names,{account,name:'Example'});
+  const labels=accountLabels(keys,names);
+  assert.equal(labels.get(keys[1]),'Example · Europe');
+  assert.ok(labels.get(keys[0]).startsWith('Example · Americas'));
+  assert.notEqual(labels.get(keys[0]),labels.get(keys[2]));
+  assert.equal(accountName('Synthetic example',names),'Synthetic example');
+  assert.equal(accountName('1-S2-1-9999999 · 300',names),'1-S2-1-9999999 · 300');
+});
+test('folder scans read name metadata once for all profiles without following shortcuts',async()=>{
+  const payload=shortcutFixture('C:\\Users\\Example\\StarCraft II\\Accounts\\100\\1-S2-1-1234567');
+  const shortcut={name:'Example_123@1.lnk',kind:'file',getFile:async()=>({name:'Example_123@1.lnk',size:payload.length,arrayBuffer:async()=>Uint8Array.from(payload).buffer})};
+  const selected=new FolderSelection(profiles);
+  await selected.scan(directory('StarCraft II',[shortcut]));
+  assert.equal(accountName('1-S2-1-1234567 · 100',selected.accountNames),'Example · Americas');
+  assert.deepEqual(selected.entries,[]);
+});
 test('one folder scan retains all profiles and accounts across map switches',async()=>{
   const file=name=>({name,kind:'file'});
   const root=directory('StarCraft II',[directory('Accounts',[directory('100',[directory('1-S2-1-1234567',[directory('Banks',[directory('1-S2-1-7654321',[

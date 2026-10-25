@@ -1,8 +1,9 @@
 import {digest,replaceVerified} from './saving.mjs';
 import {currentBankCandidate,shouldScanDirectory,classify as classifyName} from './discovery.mjs';
-import {FolderSelection,rememberedFolder} from './folders.mjs';
 const $=id=>document.getElementById(id);
 const release=new URL(import.meta.url).searchParams.get('v')||'1';
+const {FolderSelection,rememberedFolder}=await import('./folders.mjs?v='+release);
+const {accountLabels,accountName,isAccountShortcut,readAccountShortcut,addAccountName}=await import('./account-names.mjs?v='+release);
 const profiles=await (await fetch('profiles.json?v='+release,{cache:'no-store'})).json();
 $('profile-count').textContent=String(profiles.length).padStart(2,'0')+' map profiles';
 const folderSelection=new FolderSelection(profiles);
@@ -29,7 +30,8 @@ function switchSession(){keep();current=sessions.get(selectedSessions.get(cacheK
 for(const p of profiles)$('map').append(option(p.id,p.name));
 $('map').onchange=()=>{keep();profile=profiles.find(p=>p.id===$('map').value);switchSession();};
 $('accounts').onchange=()=>{account=$('accounts').value;switchSession();};
-function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);$('accounts').replaceChildren(option('all','All detected accounts'));for(const key of [...keys].sort())$('accounts').append(option(key,key));$('accounts').value=account;}
+function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);const labels=accountLabels(keys,folderSelection.accountNames);$('accounts').replaceChildren(option('all','All detected accounts'));for(const key of [...keys].sort((a,b)=>labels.get(a).localeCompare(labels.get(b)))){const item=option(key,labels.get(key));item.title=key;$('accounts').append(item);}$('accounts').value=account;}
+
 function render(){
  $('map-info').replaceChildren(el('b','Audited profile '+profile.version+' · Map '+(profile.region||1)+'/'+profile.map),el('p',profile.description));
  $('empty').hidden=!!current;$('loaded').hidden=!current;$('editor-title').textContent=current?profile.name:'Choose a bank to begin';
@@ -89,7 +91,7 @@ function renderBanks(){
  const list=$('bank-list');list.replaceChildren();
  const filtered=entries.filter(e=>!e.backup&&e.profile===profile.id&&(account==='all'||e.account===account)).sort((a,b)=>a.relative.localeCompare(b.relative));
  if(filtered.length>1)list.append(el('small','More than one main-bank location matches. Choose the account, author and path you use; no file is selected by age.'));
- for(const entry of filtered){const b=el('button',entry.name);b.append(el('small','Main bank · '+entry.account),el('small','Author '+entry.author));if(filtered.length>1)b.append(el('small',entry.relative));b.onclick=()=>task(()=>openEntry(entry));list.append(b);}
+ for(const entry of filtered){const b=el('button',entry.name);b.append(el('small','Main bank · '+accountName(entry.account,folderSelection.accountNames)),el('small','Author '+entry.author));if(filtered.length>1)b.append(el('small',entry.relative));b.onclick=()=>task(()=>openEntry(entry));list.append(b);}
  if(entries.length&&!filtered.length)list.append(el('small','No current main bank found for this map and account. Nested copies and backups are excluded.'));
 }
 function folderStatus(text){$('folder-status').textContent=text;$('rescan-folder').hidden=!folderSelection.root;}
@@ -124,6 +126,7 @@ $('folder-fallback').onchange=()=>task(async()=>{
   const relative=file.webkitRelativePath,parts=relative.split('/');
   // Match the native walk: every directory transition must be canonical.
   if(parts.slice(1,-1).some((name,i)=>!shouldScanDirectory(parts.slice(0,i+1).join('/'),name)))continue;
+  if(isAccountShortcut(parts.slice(0,-1).join('/'),file.name)){try{addAccountName(folderSelection.accountNames,await readAccountShortcut(file));}catch{}}
   const entry=currentBankCandidate(relative,profiles);if(entry)entries.push({...entry,file});
  }
  folderSelection.root=null;$('rescan-folder').hidden=true;folderStatus('Folder selected. Shared by all map profiles in this tab.');

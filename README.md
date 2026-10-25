@@ -86,3 +86,10 @@ Neither folder selection nor refresh changes pending edits or writes banks.
 Input changes are captured immediately, including before a profile switch.
 
 No published-match acceptance test is claimed for these expansions.
+
+Account choices display player names and regions when SC2's local account
+shortcuts provide them. The site reads only shortcut target metadata under the
+selected StarCraft II folder; it never launches shortcuts or follows their
+paths. Account IDs remain the identity used for filtering, sessions and saves.
+Duplicate display names are disambiguated; missing names fall back to IDs.
+No names or private account mappings are bundled or uploaded.
