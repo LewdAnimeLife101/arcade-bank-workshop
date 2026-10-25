@@ -1,0 +1,155 @@
+{
+  "map": {
+    "region": 1,
+    "id": 369775,
+    "title": "Mineralz Survival 2",
+    "cached_version": "2.62",
+    "archive_sha256": "7664a93c6c5357d5dd5a8d5f7134160a2e8978726749339039f66cd6a85ff6d4"
+  },
+  "evidence": "Existing verified cache identity and extracted MapScript.galaxy plus UserData.xml/English strings; source audit, not a published-match test.",
+  "families": [
+    {
+      "fields": "sec/v1..v7",
+      "status": "editable",
+      "meaning": "seven highest-night records, 0..70",
+      "source_lines": [
+        842,
+        848,
+        10174,
+        10181,
+        15432,
+        15434
+      ]
+    },
+    {
+      "fields": "sec/v8,v9",
+      "status": "editable",
+      "meaning": "games/wins; wins <= games; native arithmetic domain checked",
+      "source_lines": [
+        10181,
+        15400,
+        15409
+      ]
+    },
+    {
+      "fields": "sec/v10,v11",
+      "status": "editable",
+      "meaning": "Probe level and fractional XP, floor(XP)=level; max level10000",
+      "source_lines": [
+        9839,
+        9852,
+        10181
+      ]
+    },
+    {
+      "fields": "sec/v12,v13",
+      "status": "editable",
+      "meaning": "best/current win streak; older1.2 v13 migration preserves originalformat",
+      "source_lines": [
+        9703,
+        9708,
+        9820,
+        9836
+      ]
+    },
+    {
+      "fields": "sec/testgames,testnights",
+      "status": "editable",
+      "meaning": "test counters; native CP math limits apply",
+      "source_lines": [
+        13097,
+        13098
+      ]
+    },
+    {
+      "fields": "sec/Achievements",
+      "status": "editable",
+      "meaning": "108 named flags, base digit+1;42reserved tail positions preserved",
+      "source_lines": [
+        10654,
+        10671,
+        10772,
+        10805
+      ]
+    },
+    {
+      "fields": "cus/skin",
+      "status": "newly editable",
+      "meaning": "selection: Probe plus21night skins,3test skins,2achievement skins; prerequisites checked; unavailable originals preserved",
+      "source_lines": [
+        2111,
+        2114,
+        3234,
+        3377
+      ]
+    },
+    {
+      "fields": "sec/version",
+      "status": "read_only",
+      "meaning": "supports bank1.2/1.3 only, not map version; preserve"
+    },
+    {
+      "fields": "sec/CP1,CP2",
+      "status": "derived",
+      "meaning": "existing native v5/v7/v10 corroboratedcodec unchanged"
+    },
+    {
+      "fields": "base talent points",
+      "status": "derived",
+      "meaning": "5+sum(floor(nights/10))+isqrt(level)+beststreak+floor(achievements/7); 179 under source bounds; rolebonus separate",
+      "source_lines": [
+        4842,
+        4877
+      ]
+    },
+    {
+      "fields": "talent allocations/roles",
+      "status": "not_saved",
+      "meaning": "match-local data, no persisted allocation fields in this mainbank"
+    },
+    {
+      "fields": "skin26..30",
+      "status": "unsupported new selection",
+      "meaning": "requires separate Stats/4955913823949313 legacy bankvalidation; currentbank insufficient",
+      "source_lines": [
+        3280,
+        3333
+      ]
+    },
+    {
+      "fields": "skin33",
+      "status": "unsupported new selection",
+      "meaning": "catalog account eventgate, not a savedunlock",
+      "source_lines": [
+        3353,
+        3371
+      ]
+    },
+    {
+      "fields": "Stats/stats/*;4955913823949313/sec/*",
+      "status": "external_legacy",
+      "meaning": "auxiliary legacy-bank read/validation for cosmetics; not thisprofile or mainfile"
+    },
+    {
+      "fields": "MineralzSurvival2BU1..BU3",
+      "status": "rotating_backup",
+      "meaning": "same schema, exclude current-main autodetection"
+    }
+  ],
+  "changes": [
+    "Optional State.skin and validated editing (core.py)",
+    "skin_options and skin_eligible helpers (core.py)",
+    "All fields have descriptions with dependency and arithmetic caveats (data/mineralz/map_profile.json)",
+    "Existing108 achievement names/descriptions ready for bridge rendering"
+  ],
+  "tests": {
+    "new_synthetic": 7,
+    "existing_semantics_and_native_math": 253,
+    "result": "passed"
+  },
+  "remaining": [
+    "Published Arcade load/save round trip not performed",
+    "External legacy skin eligibility not established",
+    "No promise arbitrary storage-max combinations pass native protection arithmetic"
+  ]
+}

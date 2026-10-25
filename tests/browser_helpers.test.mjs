@@ -3,8 +3,29 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {fileIdentity,classify,currentBankCandidate,shouldScanDirectory} from '../dist/discovery.mjs';
 import {replaceVerified} from '../dist/saving.mjs';
+import {FolderSelection} from '../dist/folders.mjs';
 const profiles=JSON.parse(await readFile(new URL('../dist/profiles.json',import.meta.url)));
 const bytes=text=>new TextEncoder().encode(text);
+
+function directory(name,children){return {name,kind:'directory',async *entries(){for(const child of children)yield [child.name,child];}};}
+test('one folder scan retains all profiles and accounts across map switches',async()=>{
+  const file=name=>({name,kind:'file'});
+  const root=directory('StarCraft II',[directory('Accounts',[directory('100',[directory('1-S2-1-1234567',[directory('Banks',[directory('1-S2-1-7654321',[
+    file('zombieworldu.SC2Bank'),file('Banks.SC2Bank'),file('MineralzSurvival2.SC2Bank'),directory('Backup',[file('Banks.SC2Bank')])
+  ])])])])])]);
+  const selected=new FolderSelection(profiles);await selected.scan(root);
+  assert.equal(selected.entries.length,3);
+  const unity=selected.forProfile('unity')[0];
+  assert.equal(selected.forProfile('mineralz_evolution_258').length,1);
+  assert.equal(selected.forProfile('mineralz').length,1);
+  assert.equal(selected.forProfile('unity')[0],unity);
+  assert.equal(selected.root,root);
+  assert.equal(selected.forProfile('unity','different account').length,0);
+  const broken=directory('StarCraft II',[]);broken.entries=async function*(){throw Error('permission revoked');};
+  await assert.rejects(selected.scan(broken),/permission revoked/);
+  assert.equal(selected.root,root);assert.equal(selected.forProfile('unity')[0],unity);
+  await selected.scan();assert.equal(selected.entries.length,3);
+});
 
 test('discovery separates accounts/authors, supports redirected paths and never elevates backups',()=>{
   for(const base of ['Documents/StarCraft II','OneDrive/Documents/StarCraft II']){
@@ -31,6 +52,17 @@ test('known rotating backups are excluded even directly alongside a main',()=>{
   const root='StarCraft II/Accounts/100/1-S2-1-1234567/Banks/1-S2-1-7654321/';
   for(const name of ['MineralzSurvival2BU1.SC2Bank','MineralzSurvival2BU3.SC2Bank','FWLSBank_backup_99.SC2Bank'])assert.equal(currentBankCandidate(root+name,profiles),null);
   for(const name of ['MineralzSurvival2.SC2Bank','FWLSBank.SC2Bank','HackersWillBeBanned.SC2Bank','BlizzardBuiltIn.SC2Bank'])assert.ok(currentBankCandidate(root+name,profiles));
+});
+
+test('Probes vs Zealot discovers each supported companion separately and omits encrypted MMR',()=>{
+  const root='StarCraft II/Accounts/100/1-S2-1-1234567/Banks/1-S2-1-7654321/';
+  for(const name of ['ProbesvZealot2','PvsZ2GameplayOptions','PvZ2Options2']){
+    const entry=currentBankCandidate(root+name+'.SC2Bank',profiles);
+    assert.equal(entry.profile,'probes_zealot_2118');assert.equal(entry.backup,false);
+    assert.equal(currentBankCandidate(root+'backup/'+name+'.SC2Bank',profiles),null);
+    assert.equal(currentBankCandidate(root+name+'_backup_1.SC2Bank',profiles),null);
+  }
+  assert.equal(currentBankCandidate(root+'PvZ2MMR.SC2Bank',profiles),null);
 });
 
 test('canonical traversal ignores copied trees but retains distinct account and author choices',()=>{

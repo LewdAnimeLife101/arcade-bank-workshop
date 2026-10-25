@@ -38,7 +38,7 @@
     "version": "2.62",
     "map": 369775,
     "filename": "MineralzSurvival2.SC2Bank",
-    "description": "Probe level, experience, nights, wins, streaks and achievements.",
+    "description": "Probe progression, seven difficulty records, 108 named achievements and prerequisite-checked Probe skins. Native protection math verified in a local diagnostic; published-match acceptance is not guaranteed.",
     "mainNames": [
       "MineralzSurvival2"
     ],
@@ -93,7 +93,7 @@
     "version": "2.58",
     "map": 344126,
     "filename": "Banks.SC2Bank",
-    "description": "Signed level and difficulty records with source-required check values. Automated offline checks; published-map load/save not tested.",
+    "description": "Levels, difficulty records, role wins, achievements, challenge skins and building cosmetics. Prestige and account-dependent Impossible checks are preserved read-only. Offline tested; published-map load/save not tested.",
     "mainNames": [
       "Banks"
     ],
@@ -105,6 +105,34 @@
     ],
     "verification": {
       "scope": "automated_offline",
+      "published_match_tested": false
+    }
+  },
+  {
+    "id": "probes_zealot_2118",
+    "label": "Probes vs Zealot 2 Updated · 2.118 · Offline tested",
+    "name": "Probes vs Zealot 2 Updated",
+    "version": "2.118",
+    "map": 308522,
+    "filename": "ProbesvZealot2.SC2Bank",
+    "description": "Probe and Zealot progression, achievements, rewards and saved preferences. Three supported banks; encrypted MMR is excluded. Offline tested; published-map load/save not tested.",
+    "mainNames": [
+      "ProbesvZealot2",
+      "PvsZ2GameplayOptions",
+      "PvZ2Options2"
+    ],
+    "bankNames": [
+      "ProbesvZealot2",
+      "PvsZ2GameplayOptions",
+      "PvZ2Options2"
+    ],
+    "nativeBackupNames": [
+      "ProbesvZealot2",
+      "PvsZ2GameplayOptions",
+      "PvZ2Options2"
+    ],
+    "verification": {
+      "scope": "static_source_and_offline",
       "published_match_tested": false
     }
   }

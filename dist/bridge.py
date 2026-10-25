@@ -12,7 +12,7 @@ def construct(pid,raw,name,player,author):
         raise ValueError('Both original account handles are required.')
     p=get_profile(pid);path=Path('/local')/player/'Banks'/author/name
     kw={} if pid=='unity' else {'player':player}
-    if pid in ('reign','fallen','mineralz_evolution_258'):kw['author']=author
+    if pid in ('reign','fallen','mineralz_evolution_258','probes_zealot_2118'):kw['author']=author
     bank=import_module(p.package+'.core').Bank(raw,path,**kw)
     if bank.errors:raise ValueError('; '.join(bank.errors))
     if pid=='unity' and bank.root.find('Signature') is not None and bank.signature_status()!='Verified':
@@ -23,7 +23,7 @@ def render(s,target):
     kw={}
     if s['profile']=='reign':kw={'hero_levels':s['levels'],'hero_evolutions':s['evos']}
     result=s['bank'].render(target,**kw)
-    raw=result[0];effective=result[1] if s['profile']=='unity' else target
+    raw=result[0];effective=result[1] if s['profile'] in ('unity','probes_zealot_2118') else target
     fresh=construct(s['profile'],raw,s['name'],s['player'],s['author'])
     if fresh.state!=effective:raise ValueError('Output state did not pass read-back verification.')
     return raw,effective,result[-1]
@@ -63,7 +63,7 @@ def describe(s):
             labels=['Starting minerals','Damage (%)','Life and shields (%)','Armor (%)','Movement speed (raw)','First unique effect','Enhancement count','Second unique effect']
             for i,label in enumerate(labels):add(['souls',n,'stats',i],label,group,'fixed',0,cap*(10 if i==0 else 1) if i<5 else 14 if i in (5,7) else 524287,description='Tier limits are enforced again at export. Movement speed displays as raw / 200.' if i<5 else 'Effect IDs 0–14; enhancement count is preserved by Max jewel stats.')
         for key,v in t.settings.items():add(['settings',key],key,'Settings','bool' if isinstance(v,bool) else 'int')
-    elif pid in ('mineralz','reign','fallen','mineralz_evolution_258'):
+    elif pid in ('mineralz','reign','fallen','mineralz_evolution_258','probes_zealot_2118'):
         profile=p
         if pid=='reign':
             from zrc_editor.guidance import enriched_profile
@@ -73,10 +73,14 @@ def describe(s):
             if key not in t.values:continue
             path=['values',key];kind=spec.get('type','string' if isinstance(t.values[key],str) else 'int');kind='bool' if kind=='flag' else kind
             if pid=='reign' and spec.get('unit_key'):continue
-            add(path,spec['label'],spec.get('group',spec.get('category','Progress')),kind,spec.get('min',0),spec.get('max'),spec.get('description',spec.get('help','')),readonly=not spec.get('editable',True))
+            add(path,spec['label'],spec.get('group',spec.get('category','Progress')),kind,spec.get('min',0),spec.get('max'),spec.get('description',spec.get('help','')),options=spec.get('options'),readonly=not spec.get('editable',True))
         if pid=='mineralz':
+            from mineralz_editor.core import skin_options,talent_points
+            add(['skin'],'Selected Probe skin','Customization',minimum=1,maximum=33,description='Cosmetic selection only. Each option lists its requirement; changing it does not grant requirements.',options=skin_options(t,p))
+            rows.append({'id':'derived:talent_points','label':'Base talent points','group':'Progression','kind':'int','value':talent_points(t,p),'min':5,'max':179,'description':'Calculated by the map from level, difficulty records, best win streak and achievements. Recalculated after preview; not a separately saved balance.','readonly':True})
             for i in range(108):
-                rows.append({'id':f'achievement:{i}','label':f'Achievement {i+1}','group':'Achievements','kind':'bool','value':t.achievements[i]!=p['achievements_codec']['base_string'][i],'min':0,'max':None,'description':'Saved achievement flag. Reserved positions are preserved.','readonly':False})
+                spec=p['achievements'][i]
+                rows.append({'id':f'achievement:{i}','label':spec['label'],'group':'Achievements','kind':'bool','value':t.achievements[i]!=p['achievements_codec']['base_string'][i],'min':0,'max':None,'description':spec.get('description','Saved achievement flag. Reserved positions are preserved.'),'readonly':False})
         if pid=='fallen':
             for i,page in enumerate(p['trophy_pages']):
                 for j,tr in enumerate(page['trophies']):add(['trophies',i,j],tr['label'],'Trophies','bit',description=tr.get('description',''),readonly=tr.get('restricted',False))

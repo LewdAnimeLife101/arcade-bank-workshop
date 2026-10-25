@@ -1,9 +1,11 @@
 import {digest,replaceVerified} from './saving.mjs';
 import {currentBankCandidate,shouldScanDirectory,classify as classifyName} from './discovery.mjs';
+import {FolderSelection,rememberedFolder} from './folders.mjs';
 const $=id=>document.getElementById(id);
 const release=new URL(import.meta.url).searchParams.get('v')||'1';
 const profiles=await (await fetch('profiles.json?v='+release,{cache:'no-store'})).json();
 $('profile-count').textContent=String(profiles.length).padStart(2,'0')+' map profiles';
+const folderSelection=new FolderSelection(profiles);
 let profile=profiles[0],current=null,entries=[],account='all',page=0,busy=false;
 const sessions=new Map(),selectedSessions=new Map(),requests=new Map();let sequence=0;
 const worker=new Worker('worker.js?v='+release,{type:'module'});
@@ -49,7 +51,7 @@ function renderFields(){if(!current)return;const query=$('search').value.toLower
  else if(f.kind==='bool'||f.kind==='bit'){input=el('input');input.type='checkbox';input.checked=!!valueOf(f);}
  else if(f.kind==='string'&&String(valueOf(f)).length>45){input=el('textarea');input.value=String(valueOf(f));}
  else{input=el('input');input.type=['int','fixed'].includes(f.kind)?'number':'text';input.value=String(valueOf(f));if(input.type==='number'){input.min=f.min??0;if(f.max!=null)input.max=f.max;input.step=f.kind==='fixed'?'any':'1';}}
- if(input.type==='number'){input.addEventListener('input',()=>{if(input.value!==''&&Number.isFinite(Number(input.value))){if(f.max!=null&&Number(input.value)>Number(f.max))input.value=String(f.max);if(f.min!=null&&Number(input.value)<Number(f.min))input.value=String(f.min);}});}input.id=inputId;input.disabled=!!f.readonly;input.onchange=()=>{const v=input.type==='checkbox'?input.checked:input.value;if(String(v)===String(f.value))current.pending.delete(f.id);else current.pending.set(f.id,v);current.output=null;updateDirty();if(profile.id==='liberty'&&f.label==='Jewel tier')updateSoulLimits(f);};row.append(copy,input);$('fields').append(row);}
+ if(input.type==='number'){input.addEventListener('input',()=>{if(input.value!==''&&Number.isFinite(Number(input.value))){if(f.max!=null&&Number(input.value)>Number(f.max))input.value=String(f.max);if(f.min!=null&&Number(input.value)<Number(f.min))input.value=String(f.min);}});}input.id=inputId;input.disabled=!!f.readonly;const stage=()=>{const v=input.type==='checkbox'?input.checked:input.value;if(String(v)===String(f.value))current.pending.delete(f.id);else current.pending.set(f.id,v);current.output=null;updateDirty();if(profile.id==='liberty'&&f.label==='Jewel tier')updateSoulLimits(f);};input.addEventListener('input',stage);input.addEventListener('change',stage);row.append(copy,input);$('fields').append(row);}
  if(!filtered.length)$('fields').append(el('p','No fields match this search.'));
  $('pagination').replaceChildren();if(pages>1){const prev=el('button','← Previous'),next=el('button','Next →');prev.disabled=page===0;next.disabled=page===pages-1;prev.onclick=()=>{page--;renderFields();};next.onclick=()=>{page++;renderFields();};$('pagination').append(prev,el('span',`${page+1} / ${pages} · ${filtered.length} fields`),next);}
 }
@@ -90,20 +92,32 @@ function renderBanks(){
  for(const entry of filtered){const b=el('button',entry.name);b.append(el('small','Main bank · '+entry.account),el('small','Author '+entry.author));if(filtered.length>1)b.append(el('small',entry.relative));b.onclick=()=>task(()=>openEntry(entry));list.append(b);}
  if(entries.length&&!filtered.length)list.append(el('small','No current main bank found for this map and account. Nested copies and backups are excluded.'));
 }
-async function scanFolder(){
+function folderStatus(text){$('folder-status').textContent=text;$('rescan-folder').hidden=!folderSelection.root;}
+async function scanFolder(root){
  if(!window.showDirectoryPicker){$('folder-fallback').click();return;}
- const root=await showDirectoryPicker({mode:'read'}),found=[];
- async function walk(dir,path,depth){
-  if(depth>7)return;
-  for await(const [name,handle] of dir.entries()){
-   if(handle.kind==='directory'){if(shouldScanDirectory(path,name))await walk(handle,path+'/'+name,depth+1);}
-   else{const entry=currentBankCandidate(path+'/'+name,profiles);if(entry)found.push({...entry,handle});}
-  }
- }
- await walk(root,root.name,0);entries=found;refreshAccounts();renderBanks();
+ root=root||await showDirectoryPicker({mode:'read',id:'starcraft-banks'});
+ entries=await folderSelection.scan(root);refreshAccounts();renderBanks();
+ let suffix='';try{await rememberedFolder('put',root);}catch{suffix=' Remembered for this tab only.';}
+ folderStatus('Selected: '+root.name+'. Shared by all map profiles.'+suffix);
  message(`Found ${entries.length} main bank file(s). Nested copies and backups are excluded. No files changed.`);
 }
-$('folder').onclick=()=>task(scanFolder);
+$('folder').onclick=()=>task(()=>scanFolder());
+$('rescan-folder').onclick=()=>task(async()=>{
+ const root=folderSelection.root;
+ if(await root.queryPermission({mode:'read'})!=='granted'&&await root.requestPermission({mode:'read'})!=='granted')throw Error('Folder access was not granted. Select your Starcraft folder again.');
+ await scanFolder(root);
+});
+async function restoreFolder(){
+ if(!window.showDirectoryPicker)return;
+ try{
+  const root=await rememberedFolder('get');if(!root)return;
+  folderSelection.root=root;
+  if(await root.queryPermission({mode:'read'})==='granted'){
+   entries=await folderSelection.scan();refreshAccounts();renderBanks();
+   folderStatus('Selected: '+root.name+'. Shared by all map profiles.');
+  }else folderStatus('Remembered: '+root.name+'. Click Refresh banks to reconnect.');
+ }catch{folderStatus('Select your Starcraft folder to reconnect.');}
+}
 $('folder-fallback').onchange=()=>task(async()=>{
  entries=[];
  for(const file of $('folder-fallback').files){
@@ -112,6 +126,7 @@ $('folder-fallback').onchange=()=>task(async()=>{
   if(parts.slice(1,-1).some((name,i)=>!shouldScanDirectory(parts.slice(0,i+1).join('/'),name)))continue;
   const entry=currentBankCandidate(relative,profiles);if(entry)entries.push({...entry,file});
  }
+ folderSelection.root=null;$('rescan-folder').hidden=true;folderStatus('Folder selected. Shared by all map profiles in this tab.');
  refreshAccounts();renderBanks();
  message(`Found ${entries.length} main bank file(s). Nested copies and backups are excluded. This browser can export copies; direct replacement requires Chrome or Edge file access.`);
 });
@@ -126,6 +141,8 @@ const db=new Promise((resolve,reject)=>{const r=indexedDB.open('arcade-bank-work
 async function vault(method,value){const d=await db;return new Promise((resolve,reject)=>{const tx=d.transaction('backups',method==='put'?'readwrite':'readonly'),store=tx.objectStore('backups');const r=method==='put'?store.put(value):method==='get'?store.get(value):store.getAll();let result;r.onsuccess=()=>{result=r.result;};tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Recovery storage unavailable.'));});}
 $('replace').onclick=()=>task(async()=>{if(!current.handle||current.backup||current.data.demo)throw Error('Replacement is only available for an opened main bank.');await update('preview');const s=current,box=modal('Replace this current bank?');box.append(el('p',`${s.data.name} · ${s.data.player}`),el('p','A verified original backup is stored in this browser’s Recovery vault, outside the SC2 bank folders. You can download it later. Clearing this site’s browser data removes that vault.'));const row=el('div',undefined,'confirm-check'),check=el('input');check.type='checkbox';check.id='menu-confirm';const label=el('label','StarCraft II is closed, or I am at the main menu outside every match.');label.htmlFor=check.id;row.append(check,label);box.append(row);const go=el('button','Back up & replace','primary');go.disabled=true;check.onchange=()=>go.disabled=!check.checked;go.onclick=()=>task(async()=>{if(!check.checked)throw Error('Confirm that you are outside every match.');const readback=await replaceVerified({handle:s.handle,original:s.original,output:s.output,confirmed:check.checked,backup:async(raw,sha)=>{const record={id:crypto.randomUUID(),created:new Date().toISOString(),name:s.data.name,player:s.data.player,author:s.data.author,profile:s.data.profile,raw,sha};await vault('put',record);return record.id;},verifyBackup:async id=>(await vault('get',id))?.raw});s.data=await rpc({op:'open',profile:s.data.profile,raw:b64(readback),name:s.data.name,player:s.data.player,author:s.data.author});s.original=readback;s.output=null;s.pending.clear();keep();render();$('dialog').close();message('Bank replaced and verified. Original preserved in Recovery vault. The game has not been observed reloading it.');});box.append(el('div',undefined,'dialog-actions'));box.lastChild.append(go);});
 $('backups').onclick=()=>task(async()=>{const records=(await vault('all')).sort((a,b)=>b.created.localeCompare(a.created));const box=modal('Recovery vault');box.append(el('p','Verified originals from replacements made in this browser. Download an independent copy before clearing site data.'));if(!records.length)box.append(el('p','No replacements have been made in this browser.'));for(const r of records){const b=el('button',r.name+' · '+r.player+' · '+new Date(r.created).toLocaleString());b.className='full';b.onclick=()=>task(async()=>{if(await digest(r.raw)!==r.sha)throw Error('Backup checksum mismatch.');download(r.raw,r.name);});box.append(b);}});
-$('guide').onclick=()=>{const box=modal('Your bank, step by step');for(const [title,text] of [['1. Choose your map','Only our five audited profiles are available. Match the displayed map version; a bank does not prove which map release wrote it.'],['2. Find your account','Select the StarCraft II folder under Documents or OneDrive. The site detects bank folders and keeps accounts and map authors separate. Or open a file and enter its original handles.'],['3. Edit and review','Fields show known bounds and descriptions. Validation applies the same codecs as our desktop editor. Review presets before exporting; unsupported original data is preserved or rejected.'],['4. Save outside a match','Export a copy in any supported browser. Chrome and Edge can also replace a file you explicitly opened, after original-change checks, a verified recovery backup and your per-save main-menu confirmation.'],['Privacy and persistence','Files are processed locally. Unsaved editing sessions live in memory and are lost when the page closes. Only replacement backups persist in the local Recovery vault; they are not uploaded.'],['Compatibility','Map updates, account restrictions and game logic can still reject offline-valid saves. This tool does not grant staff access. Fallen World’s profile is 0.84; 0.85 account restrictions cannot be removed by editing a bank.']])box.append(el('h3',title),el('p',text));};
+$('guide').onclick=()=>{const box=modal('Your bank, step by step');for(const [title,text] of [['1. Choose your map','Choose one of our version-specific profiles. Match the displayed map version; a bank does not prove which map release wrote it.'],['2. Find your account','Select the StarCraft II folder under Documents or OneDrive. The site detects bank folders and keeps accounts and map authors separate. Or open a file and enter its original handles.'],['3. Edit and review','Fields show known bounds and descriptions. Validation applies the same codecs as our desktop editor. Review presets before exporting; unsupported original data is preserved or rejected.'],['4. Save outside a match','Export a copy in any supported browser. Chrome and Edge can also replace a file you explicitly opened, after original-change checks, a verified recovery backup and your per-save main-menu confirmation.'],['Privacy and persistence','Files are processed locally. Unsaved editing sessions live in memory and are lost when the page closes. The selected folder is shared across profiles. Chrome and Edge can remember its handle across visits, subject to browser permission. Unsaved edits are not retained after closing the page. Replacement backups persist in the local Recovery vault; they are not uploaded.'],['Compatibility','Map updates, account restrictions and game logic can still reject offline-valid saves. This tool does not grant staff access. Fallen World’s profile is 0.84; 0.85 account restrictions cannot be removed by editing a bank.']])box.append(el('h3',title),el('p',text));};
 window.addEventListener('beforeunload',e=>{if([...sessions.values()].some(s=>s.data.dirty||s.pending.size)){e.preventDefault();e.returnValue='';}});
 render();
+
+await task(restoreFolder);

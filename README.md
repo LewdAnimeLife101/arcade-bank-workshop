@@ -1,8 +1,8 @@
 # Arcade Bank Workshop
 
-Public browser-local edition of our Arcade Bank Editor. Six registry profiles
+Public browser-local edition of our Arcade Bank Editor. Seven registry profiles
 are included: Unity 0.928, Liberty 0.233, Mineralz 2.62, Reign of Chaos 0.291,
-Fallen World 0.84 and MineralZ Evolution [Updated] 2.58. No game assets were copied from the
+Fallen World 0.84, MineralZ Evolution [Updated] 2.58 and Probes vs Zealot 2 Updated 2.118. No game assets were copied from the
 reference restorer website. These are audited source versions, not a claim
 that every currently published map accepts edited banks.
 
@@ -35,7 +35,7 @@ timestamps never decide which account, author or mode to use.
 Manual file opening remains available. Switching maps/accounts preserves edits
 in memory; separate main filenames and authors have separate sessions.
 
-Replacement uses the shared browser save guard for all six profiles: validated
+Replacement uses the shared browser save guard for all profiles: validated
 output, per-save main-menu confirmation, original-file hash checks, a verified
 IndexedDB backup, a staged File System Access write and read-back verification.
 Browser APIs cannot use the desktop OS saving backend or prove game menu state.
@@ -61,3 +61,28 @@ preserves other slots/settings, and exports a reviewed ZIP containing both banks
 It does not replace half of a two-file dependency. Install both together outside
 a match after retaining independent originals. It reports the affordable Special
 ranks and the session-only Extras purchases explicitly.
+
+## October 2026 profile expansion
+
+MineralZ Evolution 2.58 now exposes 67 fields (58 editable), covering role wins,
+achievements, challenge skins, building cosmetics and further difficulty records.
+Prestige and Impossible checks remain read-only and are not fully validated.
+See `docs/mineralz-evolution-258.md` for evidence and scope.
+
+Probes vs Zealot 2.118 supports ProbesvZealot2, PvsZ2GameplayOptions and
+PvZ2Options2 as separate files under one map. Reward flags synchronize their XP
+requirements; wins/losses synchronize game counts and points synchronize rank.
+Encrypted PvZ2MMR and unverified cosmetic selections are not editable.
+Source coverage is included in the packaged pvz_editor/coverage.json.
+
+Mineralz Survival 2 adds prerequisite-checked Probe skins, named achievements
+and a read-only calculated talent-point total. Protection arithmetic is unchanged.
+
+The folder button is **Select your Starcraft folder**. One scan supplies every
+map profile. Chrome/Edge can remember the selected directory handle in IndexedDB;
+permission may need renewing with **Refresh banks** on a later visit. Folder
+fallback uploads stay local and remain selected for the current tab only.
+Neither folder selection nor refresh changes pending edits or writes banks.
+Input changes are captured immediately, including before a profile switch.
+
+No published-match acceptance test is claimed for these expansions.

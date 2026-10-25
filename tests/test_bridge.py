@@ -95,4 +95,43 @@ class BridgeTests(unittest.TestCase):
                     text=z.read(name).decode('utf-8-sig')
                     self.assertNotIn('C:\\Users\\',text,name)
 
+    def test_pvz_main_preview_dependencies_and_undo(self):
+        data=self.opened('probes_zealot_2118')
+        self.assertEqual(len(data['fields']),281)
+        edits={'["values","HumanStats/Wins"]':'20','["values","HumanStats/Losses"]':'4','["values","Rewards/17"]':True}
+        result=self.call(op='preview',session=data['session'],edits=edits)
+        values={f['id']:f['value'] for f in result['fields']}
+        self.assertEqual(values['["values","HumanStats/Games"]'],24)
+        self.assertEqual(values['["values","HumanStats/XP"]'],127600)
+        # Repeated previews use the normalized effective state, not stale input.
+        again=self.call(op='preview',session=data['session'])
+        self.assertEqual(again['fields'],result['fields'])
+        fresh=self.call(op='open',profile=data['profile'],raw=result['output'],name=data['name'],player=data['player'],author=data['author'])
+        self.assertEqual(fresh['fields'],result['fields'])
+        self.assertEqual(self.call(op='undo',session=data['session'])['fields'],data['fields'])
+
+    def test_pvz_companion_profiles_open_edit_and_identify_separately(self):
+        from pvz_editor.demo import demo_bytes
+        for name,key,count in [('PvsZ2GameplayOptions','GameplayOptions/AutoCastRepairAbility',33),('PvZ2Options2','Options/Night',6)]:
+            data=self.call(op='open',profile='probes_zealot_2118',raw=base64.b64encode(demo_bytes(name)).decode(),name=name+'.SC2Bank',player='1-S2-1-1234567',author='1-S2-1-7654321')
+            self.assertEqual(len(data['fields']),count)
+            fid=json.dumps(['values',key],separators=(',',':'))
+            value=next(f['value'] for f in data['fields'] if f['id']==fid)
+            result=self.call(op='preview',session=data['session'],edits={fid:not value})
+            fresh=self.call(op='open',profile=data['profile'],raw=result['output'],name=data['name'],player=data['player'],author=data['author'])
+            self.assertEqual(fresh['fields'],result['fields'])
+
+    def test_survival_named_achievements_skin_and_derived_points(self):
+        data=self.opened('mineralz')
+        achievements=[f for f in data['fields'] if f['id'].startswith('achievement:')]
+        self.assertEqual(len(achievements),108)
+        self.assertTrue(all(f['description'] for f in achievements))
+        self.assertNotEqual(achievements[0]['label'],'Achievement 1')
+        skin=next(f for f in data['fields'] if f['id']=='["skin"]')
+        self.assertGreater(len(skin['options']),20)
+        result=self.call(op='preview',session=data['session'],edits={'["values","v1"]':'10','["skin"]':'2'})
+        self.assertEqual(next(f['value'] for f in result['fields'] if f['id']=='["skin"]'),2)
+        bad=json.loads(bridge.handle(json.dumps({'op':'preview','session':data['session'],'edits':{'derived:talent_points':'179'}})))
+        self.assertFalse(bad['ok'])
+
 if __name__=='__main__': unittest.main()

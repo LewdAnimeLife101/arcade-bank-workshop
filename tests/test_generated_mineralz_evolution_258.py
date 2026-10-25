@@ -21,7 +21,8 @@ class GeneratedEvolutionTests(unittest.TestCase):
     def test_synthetic_roundtrip_dependencies_and_unchanged_fields(self):
         opened=self.call(op="open",profile="mineralz_evolution_258",demo=True)
         fields={x["label"]:x for x in opened["fields"]}
-        self.assertEqual(set(fields),{"Probe level","Normal highest night","Elite highest night"})
+        self.assertTrue({"Probe level","Normal highest night","Elite highest night"}.issubset(fields))
+        self.assertGreater(len(fields),60)
         edits={fields["Probe level"]["id"]:"200",fields["Normal highest night"]["id"]:"36",
                fields["Elite highest night"]["id"]:"51"}
         result=self.call(op="preview",session=opened["session"],edits=edits)
