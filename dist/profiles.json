@@ -1,1 +1,111 @@
-[{"id": "unity", "label": "Zombie World Unity · 0.928", "name": "Zombie World Unity", "version": "0.928", "map": 293070, "filename": "zombieworldu.SC2Bank", "description": "Talents, TP, prestige, class kills, wins and evolutions.", "mainNames": ["zombieworldu"], "bankNames": ["zombieworldu"], "nativeBackupNames": []}, {"id": "liberty", "label": "Zombie World Liberty · 0.233", "name": "Zombie World Liberty", "version": "0.233", "map": 345748, "filename": "DirectStrike.SC2Bank", "description": "Per-hero progression, ascensions, challenges, souls and dust.", "mainNames": ["DirectStrike"], "bankNames": ["DirectStrike"], "nativeBackupNames": []}, {"id": "mineralz", "label": "Mineralz Survival 2 · 2.62", "name": "Mineralz Survival 2", "version": "2.62", "map": 369775, "filename": "MineralzSurvival2.SC2Bank", "description": "Probe level, experience, nights, wins, streaks and achievements.", "mainNames": ["MineralzSurvival2"], "bankNames": ["MineralzSurvival2", "MineralzSurvival2BU1", "MineralzSurvival2BU2", "MineralzSurvival2BU3"], "nativeBackupNames": []}, {"id": "reign", "label": "Zombie World: Reign of Chaos · 0.291", "name": "Zombie World: Reign of Chaos", "version": "0.291", "map": 326447, "filename": "HackersWillBeBanned.SC2Bank", "description": "Softcore and Hardcore progress, currencies, perks and records.", "mainNames": ["HackersWillBeBanned", "BlizzardBuiltIn"], "bankNames": ["HackersWillBeBanned", "BlizzardBuiltIn"], "nativeBackupNames": []}, {"id": "fallen", "label": "Fallen World: Last Stand New Beginning · 0.84", "name": "Fallen World: Last Stand New Beginning", "version": "0.84", "map": 379420, "filename": "FWLSBank.SC2Bank", "description": "Saved skill progression, hero XP, tier unlocks, trophies and records.", "mainNames": ["FWLSBank"], "bankNames": ["FWLSBank"], "nativeBackupNames": ["FWLSBank"]}]
+[
+  {
+    "id": "unity",
+    "label": "Zombie World Unity · 0.928",
+    "name": "Zombie World Unity",
+    "version": "0.928",
+    "map": 293070,
+    "filename": "zombieworldu.SC2Bank",
+    "description": "Talents, TP, prestige, class kills, wins and evolutions.",
+    "mainNames": [
+      "zombieworldu"
+    ],
+    "bankNames": [
+      "zombieworldu"
+    ],
+    "nativeBackupNames": []
+  },
+  {
+    "id": "liberty",
+    "label": "Zombie World Liberty · 0.233",
+    "name": "Zombie World Liberty",
+    "version": "0.233",
+    "map": 345748,
+    "filename": "DirectStrike.SC2Bank",
+    "description": "Per-hero progression, ascensions, challenges, souls and dust.",
+    "mainNames": [
+      "DirectStrike"
+    ],
+    "bankNames": [
+      "DirectStrike"
+    ],
+    "nativeBackupNames": []
+  },
+  {
+    "id": "mineralz",
+    "label": "Mineralz Survival 2 · 2.62",
+    "name": "Mineralz Survival 2",
+    "version": "2.62",
+    "map": 369775,
+    "filename": "MineralzSurvival2.SC2Bank",
+    "description": "Probe level, experience, nights, wins, streaks and achievements.",
+    "mainNames": [
+      "MineralzSurvival2"
+    ],
+    "bankNames": [
+      "MineralzSurvival2",
+      "MineralzSurvival2BU1",
+      "MineralzSurvival2BU2",
+      "MineralzSurvival2BU3"
+    ],
+    "nativeBackupNames": []
+  },
+  {
+    "id": "reign",
+    "label": "Zombie World: Reign of Chaos · 0.291",
+    "name": "Zombie World: Reign of Chaos",
+    "version": "0.291",
+    "map": 326447,
+    "filename": "HackersWillBeBanned.SC2Bank",
+    "description": "Softcore and Hardcore progress, currencies, perks and records.",
+    "mainNames": [
+      "HackersWillBeBanned",
+      "BlizzardBuiltIn"
+    ],
+    "bankNames": [
+      "HackersWillBeBanned",
+      "BlizzardBuiltIn"
+    ],
+    "nativeBackupNames": []
+  },
+  {
+    "id": "fallen",
+    "label": "Fallen World: Last Stand New Beginning · 0.84",
+    "name": "Fallen World: Last Stand New Beginning",
+    "version": "0.84",
+    "map": 379420,
+    "filename": "FWLSBank.SC2Bank",
+    "description": "Saved skill progression, hero XP, tier unlocks, trophies and records.",
+    "mainNames": [
+      "FWLSBank"
+    ],
+    "bankNames": [
+      "FWLSBank"
+    ],
+    "nativeBackupNames": [
+      "FWLSBank"
+    ]
+  },
+  {
+    "id": "mineralz_evolution_258",
+    "label": "MineralZ Evolution [Updated] · 2.58 · Offline tested",
+    "name": "MineralZ Evolution [Updated]",
+    "version": "2.58",
+    "map": 344126,
+    "filename": "Banks.SC2Bank",
+    "description": "Signed level and difficulty records with source-required check values. Automated offline checks; published-map load/save not tested.",
+    "mainNames": [
+      "Banks"
+    ],
+    "bankNames": [
+      "Banks"
+    ],
+    "nativeBackupNames": [
+      "Banks"
+    ],
+    "verification": {
+      "scope": "automated_offline",
+      "published_match_tested": false
+    }
+  }
+]

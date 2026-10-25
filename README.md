@@ -1,8 +1,8 @@
 # Arcade Bank Workshop
 
-Public browser-local edition of our Arcade Bank Editor. Only our five registry
-profiles are included: Unity 0.928, Liberty 0.233, Mineralz 2.62, Reign of Chaos
-0.291 and Fallen World 0.84. No profiles or game assets were copied from the
+Public browser-local edition of our Arcade Bank Editor. Six registry profiles
+are included: Unity 0.928, Liberty 0.233, Mineralz 2.62, Reign of Chaos 0.291,
+Fallen World 0.84 and MineralZ Evolution [Updated] 2.58. No game assets were copied from the
 reference restorer website. These are audited source versions, not a claim
 that every currently published map accepts edited banks.
 
@@ -35,7 +35,7 @@ timestamps never decide which account, author or mode to use.
 Manual file opening remains available. Switching maps/accounts preserves edits
 in memory; separate main filenames and authors have separate sessions.
 
-Replacement uses the shared browser save guard for all five profiles: validated
+Replacement uses the shared browser save guard for all six profiles: validated
 output, per-save main-menu confirmation, original-file hash checks, a verified
 IndexedDB backup, a staged File System Access write and read-back verification.
 Browser APIs cannot use the desktop OS saving backend or prove game menu state.

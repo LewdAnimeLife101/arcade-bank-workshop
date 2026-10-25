@@ -12,7 +12,7 @@ def construct(pid,raw,name,player,author):
         raise ValueError('Both original account handles are required.')
     p=get_profile(pid);path=Path('/local')/player/'Banks'/author/name
     kw={} if pid=='unity' else {'player':player}
-    if pid in ('reign','fallen'):kw['author']=author
+    if pid in ('reign','fallen','mineralz_evolution_258'):kw['author']=author
     bank=import_module(p.package+'.core').Bank(raw,path,**kw)
     if bank.errors:raise ValueError('; '.join(bank.errors))
     if pid=='unity' and bank.root.find('Signature') is not None and bank.signature_status()!='Verified':
@@ -63,7 +63,7 @@ def describe(s):
             labels=['Starting minerals','Damage (%)','Life and shields (%)','Armor (%)','Movement speed (raw)','First unique effect','Enhancement count','Second unique effect']
             for i,label in enumerate(labels):add(['souls',n,'stats',i],label,group,'fixed',0,cap*(10 if i==0 else 1) if i<5 else 14 if i in (5,7) else 524287,description='Tier limits are enforced again at export. Movement speed displays as raw / 200.' if i<5 else 'Effect IDs 0–14; enhancement count is preserved by Max jewel stats.')
         for key,v in t.settings.items():add(['settings',key],key,'Settings','bool' if isinstance(v,bool) else 'int')
-    elif pid in ('mineralz','reign','fallen'):
+    elif pid in ('mineralz','reign','fallen','mineralz_evolution_258'):
         profile=p
         if pid=='reign':
             from zrc_editor.guidance import enriched_profile
