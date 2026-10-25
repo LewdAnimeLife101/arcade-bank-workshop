@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+outputs/
+qa/
+*.SC2Bank
+.env*
