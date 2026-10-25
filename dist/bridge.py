@@ -63,7 +63,17 @@ def describe(s):
             group=f'Soul jewel {n}';cap=next((x['stats2_to5_cap'] for x in souls['tiers'] if x['code']==v.type),0)
             add(['souls',n,'type'],'Jewel tier',group,maximum=15,options=[{'value':0,'label':'Empty slot'}]+[{'value':x['code'],'label':f'Tier {x["code"]}'} for x in souls['tiers']])
             labels=['Starting minerals','Damage (%)','Life and shields (%)','Armor (%)','Movement speed (raw)','First unique effect','Enhancement count','Second unique effect']
-            for i,label in enumerate(labels):add(['souls',n,'stats',i],label,group,'fixed',0,cap*(10 if i==0 else 1) if i<5 else 14 if i in (5,7) else 524287,description='Tier limits are enforced again at export. Movement speed displays as raw / 200.' if i<5 else 'Effect IDs 0–14; enhancement count is preserved by Max jewel stats.')
+            for i,label in enumerate(labels):
+                options=None
+                if i in (5,7):
+                    options=[{'value':x['code'],'label':f'{x["code"]} — {x["label"]}',
+                              'description':x['label'] if x['code'] else 'No unique effect.'} for x in souls['unique_effects']]
+                    description='Choose an effect by name. Max base stats preserves both unique effects.'
+                elif i==6:
+                    description=next(x['note'] for x in souls['stats'] if x['index']==7)
+                else:
+                    description='Tier limits are enforced again at export. Movement speed displays as raw / 200.'
+                add(['souls',n,'stats',i],label,group,'fixed',0,cap*(10 if i==0 else 1) if i<5 else 14 if i in (5,7) else 524287,description=description,options=options)
         for key,v in t.settings.items():add(['settings',key],key,'Settings','bool' if isinstance(v,bool) else 'int')
     elif pid in ('mineralz','reign','fallen','mineralz_evolution_258','probes_zealot_2118'):
         profile=p
