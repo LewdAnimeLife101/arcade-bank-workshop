@@ -80,6 +80,8 @@ def describe(s):
             if pid=='mineralz_evolution_258' and spec['key'] in ('PR','PHR2','im','is','imval'):
                 rows[-1]['automatic']=True
         if pid=='mineralz_evolution_258':
+            from mze_editor.unlocks import describe as describe_unlocks
+            rows.extend(describe_unlocks(t.values))
             from mze_editor.prestige import PERKS,curve_rank
             rank=curve_rank(t.values['PR'])
             for required,name,description in PERKS:
@@ -210,6 +212,9 @@ def dispatch(req):
                 rank=12 if action=='prestige_perks' else 100
                 s['work'].values['PHR']=max(s['work'].values['PHR'],rank)
                 notes=['Prestige rank raised to at least '+str(rank)+'. All 14 perk choices are available from rank 12; choose one per match in-game. Rank 100 reaches the highest identified prestige milestone. Separate achievement flags and other progression are preserved.']
+            elif s['profile']=='mineralz_evolution_258' and action.startswith('unlock:'):
+                from mze_editor.unlocks import grant
+                s['work'],notes=grant(s['work'],action.split(':',1)[1])
             else:raise ValueError('No audited preset for this action.')
         raw,effective,render_notes=render(s,s['work']);s['work']=effective
         if before[0]!=s['work']:s['undo'].append(before)

@@ -35,7 +35,7 @@ class ExpandedEvolutionTests(unittest.TestCase):
         ET.SubElement(ET.SubElement(sec,'Key',name='Opaque'),'Value',string='unchanged')
         # A partial encoded role count is preserved byte-for-byte on unrelated edits.
         ET.SubElement(ET.SubElement(root.find('Section'),'Key',name='a'),'Value',int='403')
-        b=bank(sign(root));self.assertFalse(b.errors);self.assertEqual(len(b.state.values),69)
+        b=bank(sign(root));self.assertFalse(b.errors);self.assertEqual(len(b.state.values),72)
         self.assertEqual(b.render(b.state.clone())[0],b.raw)
         t=b.state.clone();t.values['NIVO']=200*4096
         raw=b.render(t)[0];out=ET.fromstring(raw)
@@ -44,7 +44,7 @@ class ExpandedEvolutionTests(unittest.TestCase):
         self.assertEqual(value(out,'Sec','NIVEXP').get('fixed'),'244800')
 
     def test_nightmare_hell_dependencies_and_completion_retained(self):
-        b=bank();t=b.state.clone();t.values.update(NIGHTNMAR=35*4096,HL=35*4096)
+        b=bank();t=b.state.clone();t.values.update(NIGHTNMAR=35*4096,HL=35*4096,hell_complete=True)
         raw=b.render(t)[0];out=ET.fromstring(raw)
         for key,expected in [('XPNB','57925'),('XPNQ','59120'),('HAL','57085'),('HLO','25265')]:
             self.assertEqual(value(out,'Sec',key).get('fixed'),expected)

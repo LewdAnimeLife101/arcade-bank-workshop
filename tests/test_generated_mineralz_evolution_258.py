@@ -24,7 +24,7 @@ class GeneratedEvolutionTests(unittest.TestCase):
         self.assertTrue({"Probe level","Normal highest night","Elite highest night"}.issubset(fields))
         self.assertGreater(len(fields),60)
         edits={fields["Probe level"]["id"]:"200",fields["Normal highest night"]["id"]:"36",
-               fields["Elite highest night"]["id"]:"51"}
+               fields["Elite highest night"]["id"]:"51",fields["Elite completed"]["id"]:True}
         result=self.call(op="preview",session=opened["session"],edits=edits)
         raw=base64.b64decode(result["output"])
         root,values=self.values(raw)
@@ -59,7 +59,7 @@ class GeneratedEvolutionTests(unittest.TestCase):
     def test_lowering_elite_preserves_completion_marker(self):
         opened=self.call(op="open",profile="mineralz_evolution_258",demo=True)
         field=next(x for x in opened["fields"] if x["label"]=="Elite highest night")
-        high=self.call(op="preview",session=opened["session"],edits={field["id"]:"35"})
+        high=self.call(op="preview",session=opened["session"],edits={field["id"]:"35",'["values","elite_complete"]':True})
         reopened=self.call(op="open",profile="mineralz_evolution_258",raw=high["output"],name="Banks.SC2Bank",player="1-S2-1-1234567",author="1-S2-1-7654321")
         field2=next(x for x in reopened["fields"] if x["label"]=="Elite highest night")
         low=self.call(op="preview",session=reopened["session"],edits={field2["id"]:"34"})

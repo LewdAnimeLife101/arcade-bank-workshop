@@ -15,8 +15,8 @@ sections and keys stay unchanged. No original bank is bundled in the editor.
 | Family | Coverage and source evidence |
 |---|---|
 | Probe | `NIVO`, `EXPP`, `WINS`; loader 2634–2664, unit restore 7579–7580, save 9329–9334, win rewards 12513–12529. `NIVEXP` regenerated as NIVO×1224 when level changes. The game restores XP then explicitly sets level; editing level does not invent an XP curve. |
-| Normal/Elite | `NIGHTMNHD`, `NIGHTELITE`; KILLED=NIGHTMNHD×4788; Elite completion sets HEAL=21634 at night≥35. Loader 2627–2637, 2666–2669; writers 9898–9903,12531–12539. Normal writable≤36, Elite≤51 follow explicit reset guards. |
-| Nightmare/Hell | `NIGHTNMAR`, `HL`; XPNB=NIGHTNMAR×1655; HAL=HL×1631; completion markers XPNQ=59120/HLO=25265 at≥35. 2638–2656,9905–9911,12544–12551,16345–16356. Writable caps316/321 are arithmetic-safe limits, **not normal-play wave caps**. Victory commonly writes35. Lowering a record retains earned completion markers, matching existing behavior. |
+| Normal/Elite | `NIGHTMNHD`, `NIGHTELITE`; KILLED=NIGHTMNHD×4788; Elite completion is a separate editable flag setting HEAL=21634; merely reaching night35 does not prove victory. Loader 2627–2637, 2666–2669; writers 9898–9903,12531–12539. Normal writable≤36, Elite≤51 follow explicit reset guards. |
+| Nightmare/Hell | `NIGHTNMAR`, `HL`; XPNB=NIGHTNMAR×1655; HAL=HL×1631; completion markers XPNQ=59120/HLO=25265. Nightmare at35+ requires its marker under the loader; Hell victory is a separate editable flag. 2638–2656,9905–9911,12544–12551,16345–16356. Writable caps316/321 are arithmetic-safe limits, **not normal-play wave caps**. Victory commonly writes35. Lowering a record retains earned completion markers, matching existing behavior. |
 | Easy | Boolean `easy_complete` stores EASY35/0. Completion writer12535; first-five-skin unlock check6380–6387. |
 | Legacy special skin | Boolean `special_normal` stores ZUHIB121186/0. Writer2668 and16393; skin12 additionally needs level≥101 and Nightmare marker XPNQ59120 (6397). This field does not change those separate prerequisites. |
 | Role wins | Six decoded counters `role_a/e/i/f/o/mc`: bank Sec/a,e,i,f,o,mc multipliers4,7,9,5,13,6. Definitions3751–3828; get/compare1632–1653; saving12523; masteries6295–6335. Thresholds0,3,8,15,25,40; dual masteries require both roles. 100-win cosmetics use role checks. Mercenary wins cannot grant its WIP account eligibility (6308–6315). |
@@ -42,7 +42,8 @@ options can be preserved but cannot be newly assigned through this editor.
 | reset/cs1 | Migration marker; generated only when enabling Godlisk, otherwise preserved. |
 | VERSION,VERS | Reset/startup metadata, never a publication discriminator. VERSION only reset/admin writers; no loader read. Preserved. |
 | CODID | Map-side rejection marker. If17, editing is blocked; not cleared or fabricated. |
-| NIVEXP,KILLED,HEAL,XPNB,XPNQ,HAL,HLO | Derived/check/earned completion fields, updated only for the associated changed record, otherwise preserved. |
+| NIVEXP,KILLED,XPNB,HAL | Arithmetic checks regenerated with the associated changed record. |
+| HEAL,XPNQ,HLO | Explicit Elite/Nightmare/Hell completion controls. Stored markers are read by exact equality, including historical victories retained after prestige resets. New completion grants require the associated record at least35. Nightmare record35+ requires XPNQ; Elite/Hell records alone do not imply victory. |
 | Staff/donor/personal/event identity | Runtime allowlists and donor arrays; not freely editable bank stats. No ownership conversion or account-gate bypass. |
 | Primary/secondary skills, colours, specialities, probe skin tier, mastery unlocks | Derived in-game from level, difficulty markers and role counters (6286–6453), not independent persisted switches. The current match choice is not a bank item loadout. |
 | Achievements points | Recomputed from achieved flags and catalog point weights; no separate bank field found. |
@@ -85,3 +86,40 @@ and21 signed rounding cases. Native Round ties toward positive infinity. The
 final constant intentionally skips its immediate predecessor; both details are
 covered by regression tests. Sanitized synthetic native vectors are in
 `tests/fixtures/mze_native_impossible.json`; no real player bank is published.
+
+## Named menu coverage and completion repair
+
+The editor now lists 90 menu entries with names, effects, mode restrictions,
+requirements and individual Unlock actions: 8 specialities, 14 primary-skill
+entries across modes, 7 secondary-skill entries, 14 colours, 15 worker upgrades,
+30 role/mastery entries and 2 dual masteries. Five Mercenary entries show external
+account eligibility and cannot be granted through these bank plans.
+
+The four-resource speciality (Blue + Vespene + Plasma + Red) requires NIVO>=99
+AND HLO==25265 (6340–6343). HL35 alone is not sufficient: a player can reach that
+night without winning, and setting an already35 record used to leave a missing
+marker untouched. Its Unlock button grants level99, a Hell record of at least35
+and the actual Hell victory marker together. It preserves higher existing stats.
+
+Unlock all bank-based options grants all supported menu prerequisites, prestige100,
+level200, difficulty completion/DNA markers, Easy completion, ordinary-role wins
+at least100 for building cosmetics, shared win balance at least50, all23 known
+achievement flags and the eight editable challenge-skin flags. It preserves chosen
+cosmetics, external donor flags and Mercenary access. It stages a signed preview;
+no automatic original-file write occurs. Event rules, bans, mode choice and
+external account eligibility are not changed. Every skill/role/speciality/colour
+selection remains a match choice, rather than an invented persistent bank key.
+
+Worker gates are taken from actual control flow: workers8–11 have a Normal35
+alternative despite their displayed difficulty labels (6371–6395). Worker12
+requires the special marker, level101 and Nightmare completion; worker13 requires
+level200 and account-specific Impossible tokens outside test maps; worker14 needs
+prestige100. Unreachable Normal99 alternatives are not used in grant plans.
+Dual-mastery buttons are shared; the second role's ordinary loop can enable the
+button independently, while grant plans fund both roles to the full threshold.
+
+Tests cover level98/99 and Hell-marker combinations, existing night35 without a
+victory, historical completion after a prestige reset, each individual grant,
+all-menu coverage, repeated preview/reverting completion, signature read-back and
+preserving unrelated saved data. No published-game acceptance is inferred from
+these offline tests. Metadata source anchors are in the packaged unlock catalogs.

@@ -93,7 +93,7 @@
     "version": "2.58",
     "map": 344126,
     "filename": "Banks.SC2Bank",
-    "description": "Prestige and perk availability, all saved difficulty records including Impossible, role wins, achievements and eligible cosmetics. Native math checked; published-match load/save not tested.",
+    "description": "Named skill, speciality, worker, colour and mastery unlocks; prestige, difficulty completion, achievements and cosmetics. Native math checked; published-match load/save not tested.",
     "mainNames": [
       "Banks"
     ],
