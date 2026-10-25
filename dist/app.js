@@ -1,11 +1,12 @@
 import {digest,replaceVerified} from './saving.mjs';
 import {currentBankCandidate,shouldScanDirectory,classify as classifyName} from './discovery.mjs';
 const $=id=>document.getElementById(id);
-const profiles=await (await fetch('profiles.json')).json();
+const release=new URL(import.meta.url).searchParams.get('v')||'1';
+const profiles=await (await fetch('profiles.json?v='+release,{cache:'no-store'})).json();
 $('profile-count').textContent=String(profiles.length).padStart(2,'0')+' map profiles';
 let profile=profiles[0],current=null,entries=[],account='all',page=0,busy=false;
 const sessions=new Map(),selectedSessions=new Map(),requests=new Map();let sequence=0;
-const worker=new Worker('worker.js?v=2',{type:'module'});
+const worker=new Worker('worker.js?v='+release,{type:'module'});
 const ready=new Promise((resolve,reject)=>{worker.onmessage=({data})=>{if(data.ready){$('engine-state').textContent='Local engine ready';$('engine-detail').textContent=profiles.length+' audited codecs · browser only';$('engine-dot').textContent='●';resolve();}else if(data.fatal){$('engine-state').textContent='Engine could not start';message(data.fatal,true);reject(Error(data.fatal));}else{const pending=requests.get(data.id);if(pending){requests.delete(data.id);data.ok?pending.resolve(data.data):pending.reject(Error(data.error));}}};worker.onerror=e=>{message('Local engine failed: '+(e.message||'Worker startup error')+' ('+(e.filename||'worker')+':'+(e.lineno||0)+')',true);reject(Error(e.message));};});
 ready.catch(()=>{});
 async function rpc(request){await ready;return new Promise((resolve,reject)=>{const id=++sequence;requests.set(id,{resolve,reject});worker.postMessage({id,request});});}
@@ -28,7 +29,7 @@ $('map').onchange=()=>{keep();profile=profiles.find(p=>p.id===$('map').value);sw
 $('accounts').onchange=()=>{account=$('accounts').value;switchSession();};
 function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);$('accounts').replaceChildren(option('all','All detected accounts'));for(const key of [...keys].sort())$('accounts').append(option(key,key));$('accounts').value=account;}
 function render(){
- $('map-info').replaceChildren(el('b','Audited profile '+profile.version+' · Map 1/'+profile.map),el('p',profile.description));
+ $('map-info').replaceChildren(el('b','Audited profile '+profile.version+' · Map '+(profile.region||1)+'/'+profile.map),el('p',profile.description));
  $('empty').hidden=!!current;$('loaded').hidden=!current;$('editor-title').textContent=current?profile.name:'Choose a bank to begin';
  $('editor-subtitle').textContent=current?current.data.name+' · '+(current.data.demo?'Synthetic example — do not install':'Original validated locally'):'Your original stays unchanged until you explicitly save.';
  $('status-badge').textContent=current?(current.data.demo?'EXAMPLE':'VALIDATED ORIGINAL'):'LOCAL ONLY';
