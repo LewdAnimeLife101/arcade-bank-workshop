@@ -25,7 +25,9 @@ A separate Abacus request counts approximate unique public-site browsers; it car
 only a fixed site counter key. Cookies, referrer, bank/account details and editor
 state are not included. The provider receives ordinary request network metadata. All decoding, validation and signing run in a dedicated local worker
 using the bundled Pyodide runtime. Synthetic examples use fictional handles.
-Original game assets, maps, personal saves and personal account lists are absent.
+Only the seven small map-identification thumbnails are included as artwork;
+see `dist/assets/maps/NOTICE.txt`. Full maps, game data, personal saves and
+personal account lists are absent.
 The static web host still receives ordinary asset requests and visitor network
 metadata. Closing the page discards unsaved sessions.
 
@@ -38,6 +40,9 @@ Multiple canonical candidates remain separate and show their relative paths;
 timestamps never decide which account, author or mode to use.
 Manual file opening remains available. Switching maps/accounts preserves edits
 in memory; separate main filenames and authors have separate sessions.
+The initial map dashboard uses the same profile registry as the editor selector.
+All maps returns to that dashboard without discarding sessions or folder access;
+cards show when a profile has edits in progress. Refresh starts at the dashboard.
 
 Replacement uses the shared browser save guard for all profiles: validated
 output, per-save main-menu confirmation, original-file hash checks, a verified

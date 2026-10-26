@@ -13,7 +13,8 @@
     "bankNames": [
       "zombieworldu"
     ],
-    "nativeBackupNames": []
+    "nativeBackupNames": [],
+    "cardDescription": "Talents, prestige, TP and class progression."
   },
   {
     "id": "liberty",
@@ -29,7 +30,8 @@
     "bankNames": [
       "DirectStrike"
     ],
-    "nativeBackupNames": []
+    "nativeBackupNames": [],
+    "cardDescription": "Heroes, ascensions, soul jewels and challenges."
   },
   {
     "id": "mineralz",
@@ -48,7 +50,8 @@
       "MineralzSurvival2BU2",
       "MineralzSurvival2BU3"
     ],
-    "nativeBackupNames": []
+    "nativeBackupNames": [],
+    "cardDescription": "Probe progression, difficulty records and achievements."
   },
   {
     "id": "reign",
@@ -66,7 +69,8 @@
       "HackersWillBeBanned",
       "BlizzardBuiltIn"
     ],
-    "nativeBackupNames": []
+    "nativeBackupNames": [],
+    "cardDescription": "Hero evolutions, perks, glyphs and equipment."
   },
   {
     "id": "fallen",
@@ -84,7 +88,8 @@
     ],
     "nativeBackupNames": [
       "FWLSBank"
-    ]
+    ],
+    "cardDescription": "Skill tiers, hero XP, trophies and saved loadouts."
   },
   {
     "id": "mineralz_evolution_258",
@@ -106,7 +111,8 @@
     "verification": {
       "scope": "automated_offline",
       "published_match_tested": false
-    }
+    },
+    "cardDescription": "Prestige perks, specialities, difficulty wins and cosmetics."
   },
   {
     "id": "probes_zealot_2118",
@@ -134,6 +140,7 @@
     "verification": {
       "scope": "static_source_and_offline",
       "published_match_tested": false
-    }
+    },
+    "cardDescription": "Probe and Zealot progression, rewards and preferences."
   }
 ]

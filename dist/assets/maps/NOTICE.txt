@@ -1,0 +1,19 @@
+Arcade map identification thumbnails
+
+These seven 225 x 150 WebP images identify the supported StarCraft II Arcade
+maps. They were converted from their published Battle.net cache thumbnails,
+with the map identity and thumbnail content hash verified locally. They are
+displayed solely as map-selection artwork, at the user's explicit request.
+
+Unity: 1/293070
+Liberty: 1/345748
+Mineralz Survival 2: 1/369775
+Reign of Chaos: 1/326447
+Fallen World New Beginning: 1/379420
+MineralZ Evolution Updated: 1/344126
+Probes vs Zealot 2 Updated: 1/308522
+
+Artwork belongs to its respective map creators and/or Blizzard Entertainment;
+it is not covered by the editor's code license. This project is independent
+and does not claim endorsement. A thumbnail does not change the supported
+bank version shown on each profile.

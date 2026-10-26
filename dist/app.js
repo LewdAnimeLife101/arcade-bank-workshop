@@ -13,7 +13,7 @@ const worker=new Worker('worker.js?v='+release,{type:'module'});
 const ready=new Promise((resolve,reject)=>{worker.onmessage=({data})=>{if(data.ready){$('engine-state').textContent='Local engine ready';$('engine-detail').textContent=profiles.length+' audited codecs · browser only';$('engine-dot').textContent='●';resolve();}else if(data.fatal){$('engine-state').textContent='Engine could not start';message(data.fatal,true);reject(Error(data.fatal));}else{const pending=requests.get(data.id);if(pending){requests.delete(data.id);data.ok?pending.resolve(data.data):pending.reject(Error(data.error));}}};worker.onerror=e=>{message('Local engine failed: '+(e.message||'Worker startup error')+' ('+(e.filename||'worker')+':'+(e.lineno||0)+')',true);reject(Error(e.message));};});
 ready.catch(()=>{});
 async function rpc(request){await ready;return new Promise((resolve,reject)=>{const id=++sequence;requests.set(id,{resolve,reject});worker.postMessage({id,request});});}
-function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
+function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);$('dashboard-message').textContent=error?text:'';if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
 async function task(fn){if(busy)return;busy=true;document.body.setAttribute('aria-busy','true');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=true;try{await fn();}catch(e){if(e.name!=='AbortError')message(e.message||String(e),true);}finally{busy=false;document.body.removeAttribute('aria-busy');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=false;}}
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 function option(value,label){const n=el('option',label);n.value=value;return n;}
@@ -28,7 +28,33 @@ const sessionKey=(a,p,author,name)=>JSON.stringify([a,p,author,name]);
 function keep(){if(current){const key=sessionKey(current.account,current.data.profile,current.data.author,current.data.name);sessions.set(key,current);selectedSessions.set(cacheKey(current.account,current.data.profile),key);}}
 function switchSession(){keep();current=sessions.get(selectedSessions.get(cacheKey(account,profile.id)))||null;page=0;message('');render();renderBanks();}
 for(const p of profiles)$('map').append(option(p.id,p.name));
-$('map').onchange=()=>{keep();profile=profiles.find(p=>p.id===$('map').value);switchSession();};
+function chooseMap(id){
+ const next=profiles.find(p=>p.id===id);if(!next)return;
+ keep();profile=next;$('map').value=id;switchSession();
+ $('dashboard').hidden=true;$('workspace').hidden=false;$('all-maps').hidden=false;
+ $('editor-title').focus({preventScroll:true});$('workspace').scrollIntoView({block:'start'});
+}
+function showDashboard(){
+ keep();$('workspace').hidden=true;$('dashboard').hidden=false;$('all-maps').hidden=true;
+ renderDashboard();$('dashboard-title').focus({preventScroll:true});$('dashboard').scrollIntoView({block:'start'});
+}
+function renderDashboard(){
+ $('map-cards').replaceChildren();$('collection-count').textContent=profiles.length+' map editors';
+ for(const p of profiles){
+  const card=el('button',undefined,'map-card');card.type='button';card.setAttribute('aria-label','Open '+p.name+' editor');
+  const top=el('span',undefined,'map-card-top'),img=el('img');img.src='assets/maps/'+p.id+'.webp';img.alt='';img.width=225;img.height=150;img.decoding='async';
+  const version=el('span','PROFILE '+p.version,'map-card-version');top.append(img,version);
+  const name=el('span',p.name,'map-card-title'),description=el('span',p.cardDescription||p.description,'map-card-description');
+  const bottom=el('span',undefined,'map-card-bottom');const retained=[...sessions.values()].filter(s=>s.data.profile===p.id);
+  const pending=retained.some(s=>s.pending.size||s.data.dirty);
+  bottom.append(el('span',pending?'Edits in progress':retained.length?'Session open':'Open editor'),el('span','↗'));
+  if(pending)card.classList.add('has-edits');card.onclick=()=>chooseMap(p.id);card.append(top,name,description,bottom);$('map-cards').append(card);
+ }
+}
+$('map').onchange=()=>chooseMap($('map').value);
+$('all-maps').onclick=showDashboard;
+$('home').onclick=event=>{event.preventDefault();showDashboard();};
+renderDashboard();
 $('accounts').onchange=()=>{account=$('accounts').value;switchSession();};
 function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);const labels=accountLabels(keys,folderSelection.accountNames);$('accounts').replaceChildren(option('all','All detected accounts'));for(const key of [...keys].sort((a,b)=>labels.get(a).localeCompare(labels.get(b)))){const item=option(key,labels.get(key));item.title=key;$('accounts').append(item);}$('accounts').value=account;}
 
