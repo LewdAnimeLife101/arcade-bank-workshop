@@ -175,3 +175,11 @@ Signed synthetic output is tested through the exact bundled browser engine.
 Earlier isolated native tests cover item serialization and slot restoration;
 this rebuild has not been tested in a published Arcade match. Dynamic tooltip
 values remain marked as dynamic rather than presented as computed final stats.
+
+All seven profiles now use overview cards and visible category/group buttons.
+The map button returns to the illustrated map dashboard. Account, difficulty,
+tier, effect and loadout choices use searchable, paginated button cards in a
+dialog; no native select menus or datalists remain in the owned interface.
+Long collections such as Liberty's 100 jewel slots use group search and pages.
+Selection values, bank validation, staged edits, discovery and save checks are
+unchanged. Reign's nested glyph form uses the same choice component.

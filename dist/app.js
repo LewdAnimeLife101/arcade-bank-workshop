@@ -2,6 +2,8 @@ import {digest,replaceVerified} from './saving.mjs';
 import {currentBankCandidate,shouldScanDirectory,classify as classifyName} from './discovery.mjs';
 const $=id=>document.getElementById(id);
 const release=new URL(import.meta.url).searchParams.get('v')||'1';
+const {choiceControl}=await import('./choices.mjs?v='+release);
+const {renderProfileNavigation,visibleFields}=await import('./navigation.mjs?v='+release);
 const {renderReign,filteredFields:reignFields,inventoryChanges}=await import('./reign.mjs?v='+release);
 const {FolderSelection,rememberedFolder}=await import('./folders.mjs?v='+release);
 const {accountLabels,accountName,isAccountShortcut,readAccountShortcut,addAccountName}=await import('./account-names.mjs?v='+release);
@@ -17,7 +19,6 @@ async function rpc(request){await ready;return new Promise((resolve,reject)=>{co
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);$('dashboard-message').textContent=error?text:'';if(error&&$('welcome').open)welcomeStatus(text,true);if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
 async function task(fn){if(busy)return;busy=true;document.body.setAttribute('aria-busy','true');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=true;try{await fn();}catch(e){if(e.name!=='AbortError')message(e.message||String(e),true);}finally{busy=false;document.body.removeAttribute('aria-busy');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=false;}}
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
-function option(value,label){const n=el('option',label);n.value=value;return n;}
 const b64=bytes=>{let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(text);};
 const un64=text=>Uint8Array.from(atob(text),c=>c.charCodeAt(0));
 
@@ -28,7 +29,7 @@ const cacheKey=(a,p)=>a+'|'+p;
 const sessionKey=(a,p,author,name)=>JSON.stringify([a,p,author,name]);
 function keep(){if(current){const key=sessionKey(current.account,current.data.profile,current.data.author,current.data.name);sessions.set(key,current);selectedSessions.set(cacheKey(current.account,current.data.profile),key);}}
 function switchSession(){keep();current=sessions.get(selectedSessions.get(cacheKey(account,profile.id)))||null;page=0;message('');render();renderBanks();}
-for(const p of profiles)$('map').append(option(p.id,p.name));
+
 function chooseMap(id){
  const next=profiles.find(p=>p.id===id);if(!next)return;
  keep();profile=next;$('map').value=id;switchSession();
@@ -54,14 +55,15 @@ function renderDashboard(){
   card.append(bottom);$('map-cards').append(card);
  }
 }
-$('map').onchange=()=>chooseMap($('map').value);
+$('map').onclick=showDashboard;
 $('all-maps').onclick=showDashboard;
 $('home').onclick=event=>{event.preventDefault();showDashboard();};
 renderDashboard();
-$('accounts').onchange=()=>{account=$('accounts').value;switchSession();};
-function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);const labels=accountLabels(keys,folderSelection.accountNames);$('accounts').replaceChildren(option('all','All detected accounts'));for(const key of [...keys].sort((a,b)=>labels.get(a).localeCompare(labels.get(b)))){const item=option(key,labels.get(key));item.title=key;$('accounts').append(item);}$('accounts').value=account;}
+function refreshAccounts(){const keys=new Set(entries.map(e=>e.account));for(const s of sessions.values())keys.add(s.account);if(account!=='all')keys.add(account);const labels=accountLabels(keys,folderSelection.accountNames);const options=[{value:'all',label:'All detected accounts'},...[...keys].sort((a,b)=>labels.get(a).localeCompare(labels.get(b))).map(key=>({value:key,label:labels.get(key),description:key==='Synthetic example'?'Fictional account for trying the editor.':key}))];$('accounts').replaceChildren(choiceControl('Local account',options,account,{onChange:value=>{account=value;switchSession();}}));}
+
 
 function render(){
+ $('map').textContent=profile.name+' · Change map';refreshAccounts();
  $('map-info').replaceChildren(el('b','Audited profile '+profile.version+' · Map '+(profile.region||1)+'/'+profile.map),el('p',profile.description));
  $('empty').hidden=!!current;$('loaded').hidden=!current;$('editor-title').textContent=current?profile.name:'Choose a bank to begin';
  $('editor-subtitle').textContent=current?current.data.name+' · '+(current.data.demo?'Synthetic example — do not install':'Original validated locally'):'Your original stays unchanged until you explicitly save.';
@@ -76,10 +78,10 @@ function render(){
 }
 function updateDirty(){$('change-count').textContent=current?(current.pending.size+' unapplied field change(s)'+(current.data.dirty?' · validated edits staged':'')):'No pending edits';}
 function valueOf(f){return current.pending.has(f.id)?current.pending.get(f.id):f.value;}
-function renderFields(){if(!current)return;if(profile.id==='reign'&&!current.ui.reignFields)return;const query=$('search').value.toLowerCase(),group=$('group').value;const filtered=profile.id==='reign'?reignFields(current.data.fields,current.ui,query):current.data.fields.filter(f=>(query?`${f.label} ${f.group} ${f.description}`.toLowerCase().includes(query):f.group===group));const pages=Math.max(1,Math.ceil(filtered.length/50));page=Math.min(page,pages-1);$('fields').replaceChildren();current.ui.page=page;$('field-summary').textContent=(query?'Search results':profile.id==='reign'?(current.ui.reignGroup||current.ui.reignCategory):group)+' · '+filtered.length+' fields · '+filtered.filter(f=>!f.readonly).length+' editable';
+function renderFields(){if(!current)return;if((profile.id==='reign'&&!current.ui.reignFields)||(profile.id!=='reign'&&!current.ui.profileFields))return;const query=$('search').value.toLowerCase(),group=current.ui.group;const filtered=profile.id==='reign'?reignFields(current.data.fields,current.ui,query):visibleFields(current.data.fields,current.ui,query);const pages=Math.max(1,Math.ceil(filtered.length/50));page=Math.min(page,pages-1);$('fields').replaceChildren();current.ui.page=page;$('field-summary').textContent=(query?'Search results':profile.id==='reign'?(current.ui.reignGroup||current.ui.reignCategory):group)+' · '+filtered.length+' fields · '+filtered.filter(f=>!f.readonly).length+' editable';
  for(const f of filtered.slice(page*50,page*50+50)){const row=el('div',undefined,'field-row'),copy=el('div',undefined,'field-copy'),label=el('label',f.label);const inputId='field-'+current.data.fields.indexOf(f);label.htmlFor=inputId;if(query)copy.append(el('small',f.group,'field-context'));copy.append(label);if(f.description)copy.append(el('p',f.description));const selectionHelp=f.options?.some(o=>o.description)?el('p',f.options.find(o=>String(o.value)===String(valueOf(f)))?.description||'Existing effect code preserved.','option-description'):null;if(selectionHelp)copy.append(selectionHelp);if(f.max!==null&&f.max!==undefined)copy.append(el('small',`Supported range: ${f.min??0}–${f.max}`));if(f.readonly)copy.append(el('small',f.kind==='info'?'Availability from saved progress':f.automatic?'Calculated automatically':'Preserved read-only'));let input;
  if(f.kind==='info'){const output=el('output',String(valueOf(f)));output.id=inputId;row.append(copy,output);if(f.action){const unlock=el('button','Unlock');unlock.onclick=()=>task(()=>preview('preset',f.action));row.append(unlock);}$('fields').append(row);continue;}
- if(f.options?.length){input=el('select');if(selectionHelp)input.classList.add('named-effect');for(const o of f.options)input.append(option(String(o.value),o.label));if(!f.options.some(o=>String(o.value)===String(valueOf(f))))input.append(option(String(valueOf(f)),'Existing: '+valueOf(f)));input.value=String(valueOf(f));}
+ if(f.options?.length){const options=[...f.options];if(!options.some(o=>String(o.value)===String(valueOf(f))))options.push({value:valueOf(f),label:'Existing: '+valueOf(f)});input=choiceControl(f.label,options,valueOf(f));}
  else if(f.kind==='bool'||f.kind==='bit'){input=el('input');input.type='checkbox';input.checked=!!valueOf(f);}
  else if(f.kind==='string'&&String(valueOf(f)).length>45){input=el('textarea');input.value=String(valueOf(f));}
  else{input=el('input');input.type=['int','fixed'].includes(f.kind)?'number':'text';input.value=String(valueOf(f));if(input.type==='number'){input.min=f.min??0;if(f.max!=null)input.max=f.max;input.step=f.kind==='fixed'?'any':'1';}}
@@ -94,11 +96,10 @@ function updateSoulLimits(tierField){
  renderFields();updateDirty();
  message('Tier limits updated. Any base stats above the new tier cap were reduced in the pending preview. Effects and enhancement count were preserved.');
 }
-$('section').onchange=()=>{current.ui.category=$('section').value;current.ui.group='';current.ui.query='';current.ui.page=0;render();};
-$('group').onchange=()=>{current.ui.group=$('group').value;current.ui.page=page=0;renderFields();renderPresets();};$('search').oninput=()=>{current.ui.query=$('search').value;current.ui.page=page=0;renderFields();};
+$('search').oninput=()=>{current.ui.query=$('search').value;current.ui.page=page=0;renderFields();};
 function renderPresets(){
  const bar=$('preset-bar');bar.replaceChildren();if(!current)return;
- if(profile.id==='liberty'&&$('group').value.startsWith('Soul jewel ')){const b=el('button','Max base stats for this jewel');b.onclick=()=>task(()=>preview('preset','soul:'+$('group').value.split(' ').at(-1)));bar.append(b);}
+ if(profile.id==='liberty'&&current.ui.group?.startsWith('Soul jewel ')){const b=el('button','Max base stats for this jewel');b.onclick=()=>task(()=>preview('preset','soul:'+current.ui.group.split(' ').at(-1)));bar.append(b);}
  const meta=current.data.presetCoverage||{};$('unlock-summary').textContent=meta.summary||'Apply the supported progression presets for this map.';
  const cards=$('unlock-cards');cards.replaceChildren();
  for(const [action,title,tag,body] of [
@@ -112,25 +113,20 @@ function renderPresets(){
  const specific=$('map-presets');specific.replaceChildren();
  for(const item of current.data.presetActions||[]){const card=el('article',undefined,'specific-card');card.append(el('h4',item.title),el('p',item.description));const button=el('button',item.title);button.onclick=()=>{
    if(item.action==='funded_skills'){fundedSkills();return;}
-   if(item.action==='navigate:souls'){current.ui.view='edit';current.ui.category='Equipment & glyphs';current.ui.group='Soul jewel 1';current.ui.query='';render();return;}
+   if(item.action==='navigate:souls'){current.ui.view='edit';current.ui.overview=false;current.ui.category='Equipment & glyphs';current.ui.group='Soul jewel 1';current.ui.groupPage=0;current.ui.groupQuery='';current.ui.query='';render();return;}
    task(()=>preview('preset',item.action));
   };card.append(button);specific.append(card);
  }
  if(!specific.childElementCount)specific.append(el('p','This profile uses the two presets above. Individual unlocks remain available in Edit bank.','muted'));
 }
 function renderNavigation(){
- const fields=current.data.fields;current.ui??={view:'edit',category:'',group:'',query:'',page:0};const ui=current.ui;
- const isReign=profile.id==='reign';$('reign-browser').hidden=!isReign;
- document.querySelectorAll('#page-edit .filter-control:not(.search-control)').forEach(n=>n.hidden=isReign);
- if(isReign){ui.reignFields=renderReign({current,root:$('reign-browser'),change:render,modal,action:(op,request)=>task(()=>preview(op,undefined,{request}))});}
- for(const id of ['fields','field-summary','pagination','preset-bar'])$(id).hidden=isReign&&!ui.reignFields;
- document.querySelector('#page-edit .tools').hidden=isReign&&!ui.reignFields;
- const categories=[...new Set(fields.map(f=>f.category||'Progress & resources'))];
- if(!categories.includes(ui.category))ui.category=categories[0];
- $('section').replaceChildren(...categories.map(c=>option(c,c)));$('section').value=ui.category;
- const scoped=fields.filter(f=>(f.category||'Progress & resources')===ui.category);const groups=[...new Set(scoped.map(f=>f.group))];
- if(!groups.includes(ui.group))ui.group=groups[0];
- $('group').replaceChildren(...groups.map(g=>option(g,g+' ('+scoped.filter(f=>f.group===g).length+')')));$('group').value=ui.group;
+ current.ui??={view:'edit',category:'',group:'',query:'',page:0};const ui=current.ui,isReign=profile.id==='reign';
+ $('reign-browser').hidden=!isReign;$('profile-browser').hidden=isReign;
+ if(isReign)ui.reignFields=renderReign({current,root:$('reign-browser'),change:render,modal,action:(op,request)=>task(()=>preview(op,undefined,{request}))});
+ else ui.profileFields=renderProfileNavigation({current,profile,root:$('profile-browser'),change:render});
+ const visible=isReign?ui.reignFields:ui.profileFields;
+ for(const id of ['fields','field-summary','pagination','preset-bar'])$(id).hidden=!visible;
+ document.querySelector('#page-edit .tools').hidden=!visible;
  $('search').value=ui.query;page=ui.page||0;
 }
 function renderEditorPage(){
@@ -144,8 +140,8 @@ function fundedSkills(){
  box.append(el('p','Ordinary Unlock all changes progression, not saved skill spending. This separate preset funds regular skills and Ascendancy, chooses affordable Special ranks and reserves points for Extras. It raises your skill and ascension levels.'));
  box.append(el('p','Open FWLSBank2.SC2Bank from the same account and map-author folder. Your other slots are preserved. The selected slot is replaced with AllSkills and enabled for automatic loading.'));
  const file=el('input');file.type='file';file.accept='.SC2Bank';file.id='companion-file';const fileLabel=el('label','Existing FWLSBank2 companion');fileLabel.htmlFor=file.id;
- const slot=el('select');slot.id='loadout-slot';for(let i=1;i<=5;i++)slot.append(option(i,'Slot '+i));const slotLabel=el('label','Slot to replace');slotLabel.htmlFor=slot.id;
- const priority=el('select');priority.id='special-priority';for(const name of ['Income & experience','Buff chance & experience','Balanced'])priority.append(option(name,name));const priorityLabel=el('label','Special-point priority');priorityLabel.htmlFor=priority.id;
+ const slot=choiceControl('Slot to replace',Array.from({length:5},(_,i)=>({value:i+1,label:'Slot '+(i+1)})),1);slot.id='loadout-slot';const slotLabel=el('label','Slot to replace');slotLabel.htmlFor=slot.id;
+ const priority=choiceControl('Special-point priority',['Income & experience','Buff chance & experience','Balanced'].map(name=>({value:name,label:name})),'Income & experience');priority.id='special-priority';const priorityLabel=el('label','Special-point priority');priorityLabel.htmlFor=priority.id;
  const go=el('button','Review funded bundle','primary');go.onclick=()=>task(async()=>{
   if(!file.files[0]||file.files[0].name.toLowerCase()!=='fwlsbank2.sc2bank')throw Error('Choose the existing FWLSBank2.SC2Bank from this account’s author folder.');
   if(file.files[0].size>4194304)throw Error('Companion exceeds 4 MB.');

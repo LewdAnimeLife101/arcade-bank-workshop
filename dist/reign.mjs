@@ -1,7 +1,8 @@
+const {choiceControl}=await import('./choices.mjs'+new URL(import.meta.url).search);
 // Reign's named navigation and inventory views. All mutations use the validated bridge.
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const button=(text,fn,cls='')=>{const b=node('button',text,cls);b.type='button';b.onclick=fn;return b;};
-const select=(label,options,value)=>{const wrap=node('label',label,'reign-control'),input=node('select');input.setAttribute('aria-label',label);for(const [v,t] of options){const o=node('option',t);o.value=v;input.append(o);}input.value=value;wrap.append(input);return {wrap,input};};
+const select=(label,options,value)=>{const wrap=node('div',undefined,'reign-control'),input=choiceControl(label,options.map(([value,label])=>({value,label})),value);wrap.append(node('span',label),input);return {wrap,input};};
 const number=(label,value,min,max)=>{const wrap=node('label',label,'reign-control'),input=node('input');input.type='number';input.value=value;input.min=min;input.max=max;wrap.append(input);return {wrap,input};};
 export function inventoryChanges(before,after){
  if(!before||!after)return [];const lines=[];
