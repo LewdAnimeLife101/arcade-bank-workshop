@@ -87,7 +87,10 @@ def describe(s):
             key=(spec['section'],spec['key']) if pid=='reign' else spec['key']
             if key not in t.values:continue
             path=['values',key];kind=spec.get('type','string' if isinstance(t.values[key],str) else 'int');kind='bool' if kind=='flag' else kind
-            if pid=='reign' and spec.get('unit_key'):continue
+            if pid=='reign':
+                active={int(h['id']) for h in p['heroes']}
+                if (spec.get('unit_key') or spec['section'] in ('Evolutions','Asc','Glyphs3') or
+                    (spec['section']=='Perks' and spec['key'] in {f'PRank{95+h}' for h in active})):continue
             minimum,maximum=spec.get('min',0),spec.get('max')
             if pid=='reign' and kind=='fixed':
                 minimum=minimum/4096 if minimum is not None else None
@@ -116,13 +119,12 @@ def describe(s):
                 if h.get('xp_index') is not None:add(['hero_xp',h['xp_index']],h['label']+' XP','Heroes',maximum=h.get('max_xp',159510),description=h.get('description',''))
                 add(['hero_tiers',h['tier_index']],h['label']+' evolution','Heroes',minimum=1,maximum=h.get('editable_max_tier',h['max_tier']),description=h.get('evolution_description',''),readonly=h.get('editable_max_tier',h['max_tier'])<=1)
             for i in range(7):add(['skill_tiers',i],f'Tier {i+1} rank','Skills',maximum=4)
-        if pid=='reign':
-            from zrc_editor.levels import level_for_xp
-            for spec in p['fields']:
-                if spec.get('unit_key'):
-                    rows.append({'id':f'level:{spec["hero"]}','label':spec['label'].replace('XP','level'),'group':'Hero levels','kind':'int','value':level_for_xp(t.values[spec['section'],spec['key']]),'min':1,'max':105,'options':[{'value':i,'label':f'Level {i}'} for i in range(1,106)],'description':'Synchronizes hero XP, enhancement cap and current-version migration markers.','readonly':False})
     # JSON cannot represent tuple keys; descriptor paths stay private in Python.
     rows=organize(rows,pid,p)
+    if pid=='reign':
+        from zrc_editor import web_progression
+        rows=web_progression.organize(rows,p)
+        rows.extend(web_progression.describe(b,t,s['levels'],s['evos']))
     s['fields']={r['id']:r for r in rows}
     return [{k:v for k,v in r.items() if k!='path'} for r in rows]
 
@@ -136,10 +138,33 @@ def set_path(obj,path,value):
     obj[key]=set_path(obj[key],path[1:],value);return obj
 
 def apply_edits(s,edits):
-    describe(s)
-    for key,value in edits.items():
+    describe(s);notes=[]
+    ordered=list(edits.items())
+    if s['profile']=='reign':
+        def priority(item):
+            key,value=item
+            if key.startswith('level:'):return 1
+            if key.startswith('evolution:'):return 2
+            if key.startswith('mastery:'):return 3
+            if key.startswith('asc:'):
+                if ':passive:' in key:
+                    try:return 4 if int(value)<s['fields'][key]['value'] else 6
+                    except (ValueError,TypeError,KeyError):return 6
+                return 5
+            if key.startswith('charm:'):return 7
+            return 0
+        ordered.sort(key=priority)
+        # Explicit form changes replace an earlier form intent in this edit batch.
+        for key,_ in ordered:
+            if key.startswith('evolution:') and key in s['fields']:
+                s['evos'].pop(int(key.split(':')[1]),None)
+    for key,value in ordered:
         spec=s['fields'].get(key)
         if not spec or spec.get('readonly'):raise ValueError('Unsupported or read-only field.')
+        if s['profile']=='reign' and key.startswith(('level:','evolution:','mastery:','asc:','charm:')):
+            from zrc_editor.web_progression import apply as apply_progression
+            notes.extend(apply_progression(s['bank'],s['work'],s['levels'],s['evos'],key,value))
+            continue
         kind=spec['kind']
         if kind in ('bool','bit'):
             if type(value)!=bool:raise ValueError(spec['label']+': expected a checkbox value.')
@@ -158,11 +183,15 @@ def apply_edits(s,edits):
         else:set_path(s['work'],spec['path'],parsed)
     if s['profile']=='mineralz' and '["values","v10"]' in edits:
         s['work'].values['v11']=s['work'].values['v10']*4096
+    return notes
 
 def result(s):
-    out={'session':s['id'],'profile':s['profile'],'name':s['name'],'player':s['player'],'author':s['author'],'demo':s['demo'],'fields':describe(s),'warnings':s['bank'].warnings,'dirty':s['work']!=s['bank'].state,'presetCoverage':preset_catalog.coverage(s['profile'])}
+    out={'session':s['id'],'profile':s['profile'],'name':s['name'],'player':s['player'],'author':s['author'],'demo':s['demo'],'fields':describe(s),'warnings':s['bank'].warnings,'dirty':s['work']!=s['bank'].state or bool(s['levels']) or bool(s['evos']),'presetCoverage':preset_catalog.coverage(s['profile'])}
     out['presetActions']=preset_catalog.actions(s['profile'])
     if s['profile']=='liberty':out['soulCaps']={str(x['code']):x['stats2_to5_cap'] for x in s['bank'].souls_profile['tiers']}
+    if s['profile']=='reign':
+        from zrc_editor import web_equipment,web_glyphs
+        out['reign']={'heroes':[{**h,'name':h['name'].replace('BloodElf','Blood Elf')} for h in s['bank'].profile['heroes']],'equipment':web_equipment.describe(s['bank'],s['work']),'glyphs':web_glyphs.describe(s['bank'],s['work'])}
     return out
 
 def dispatch(req):
@@ -172,7 +201,7 @@ def dispatch(req):
         pid=req['profile'];p=get_profile(pid);player=req.get('player','');author=req.get('author','');name=req.get('name',p.bank_name+'.SC2Bank')
         if Path(name).name!=name or '/' in name or '\\' in name:raise ValueError('Invalid bank filename.')
         if req.get('demo'):
-            module=import_module(p.package+'.demo');raw=module.demo_bytes();player='1-S2-1-1234567';author='1-S2-1-7654321'
+            module=import_module(p.package+'.demo');raw=module.demo_bytes(**({'include_units':True} if pid=='reign' else {}));player='1-S2-1-1234567';author='1-S2-1-7654321'
             if pid=='unity':
                 from zwu_editor.core import Bank,Identity,signature_for
                 import xml.etree.ElementTree as ET
@@ -212,7 +241,12 @@ def dispatch(req):
     if op=='reset':s['work']=s['bank'].state.clone();s['levels']={};s['evos']={};s['undo']=[];return result(s)
     before=(s['work'].clone(),dict(s['levels']),dict(s['evos']))
     try:
-        apply_edits(s,req.get('edits',{}));notes=[]
+        notes=apply_edits(s,req.get('edits',{}))
+        if op in ('reign_equipment','reign_glyph'):
+            if s['profile']!='reign':raise ValueError('This action is only available for Reign of Chaos.')
+            module=import_module('zrc_editor.web_equipment' if op=='reign_equipment' else 'zrc_editor.web_glyphs')
+            kw={'hero_evolutions':s['evos']} if op=='reign_equipment' else {}
+            notes.extend(module.apply(s['bank'],s['work'],req['request'],**kw))
         if op=='preset':
             action=req['action']
             if action in ('all_full','all_plausible'):
@@ -243,7 +277,7 @@ def dispatch(req):
                 s['work'],notes=grant(s['work'],action.split(':',1)[1])
             else:raise ValueError('No audited preset for this action.')
         raw,effective,render_notes=render(s,s['work']);s['work']=effective
-        if before[0]!=s['work']:s['undo'].append(before)
+        if before!=(s['work'],s['levels'],s['evos']):s['undo'].append(before)
         out=result(s);out['notes']=notes+render_notes;out['output']=base64.b64encode(raw).decode();out['original']=base64.b64encode(s['bank'].raw).decode();return out
     except Exception:
         s['work'],s['levels'],s['evos']=before

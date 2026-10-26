@@ -19,15 +19,18 @@ class UnlockPageTests(unittest.TestCase):
             with self.subTest(profile=pid):
                 data=self.opened(pid);fields=data['fields']
                 self.assertEqual(len(fields),len({f['id'] for f in fields}))
-                self.assertTrue(all(f['category'] in ORDER for f in fields))
-                self.assertEqual([ORDER.index(f['category']) for f in fields],sorted(ORDER.index(f['category']) for f in fields))
+                if pid!='reign':
+                    self.assertTrue(all(f['category'] in ORDER for f in fields))
+                    self.assertEqual([ORDER.index(f['category']) for f in fields],sorted(ORDER.index(f['category']) for f in fields))
+                else:
+                    self.assertTrue(all(f['category'] in {'Heroes','Ascendancy','Perks','Charms','Resources','Records','Preferences','Advanced'} for f in fields))
                 self.assertTrue(data['presetCoverage']['summary'])
                 self.assertTrue(data['presetCoverage']['limits'])
                 self.assertIsInstance(data['presetActions'],list)
         data=self.opened('reign')
-        self.assertTrue(any(f['group'].startswith('Equipped glyphs') for f in data['fields']))
-        self.assertTrue(any(f['group'].startswith('Glyph storage') for f in data['fields']))
-        self.assertEqual(len({f['group'] for f in data['fields'] if f['group'].startswith('Ascendancy · ')}),11)
+        self.assertEqual(len(data['reign']['glyphs']['heroes']),11)
+        self.assertTrue(all(len([s for s in h['slots'] if s['location']=='equipped'])==4 for h in data['reign']['glyphs']['heroes']))
+        self.assertEqual(len({f['hero'] for f in data['fields'] if f['category']=='Ascendancy'}),11)
         self.assertEqual(len([a for a in data['presetActions'] if a['action'].startswith('reign:')]),7)
         self.assertTrue(self.opened('mineralz')['presetCoverage']['partial'])
 

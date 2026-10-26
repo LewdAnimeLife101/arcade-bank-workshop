@@ -149,3 +149,29 @@ The GitHub repository is `Starcraft-Bank/2026-bank-editor`. The counter key
 remains unchanged to retain its total. Browser permissions and storage belong to
 the origin: visitors must select their folder again on the new hostname, and
 local recovery backups are not transferred between hostnames.
+
+## Reign of Chaos workshop (0.291)
+
+Reign uses visible category and hero buttons. Equipment has 121 named catalogue
+entries, nine source rarities, tooltip stats, and explicit active-equipment,
+hero-storage and shared-stash destinations. Adding, moving and removing items
+stages a validated preview; active changes synchronize the saved form's first
+equipment loadout. Existing unsupported units, unknown items and native locks
+are preserved. Hardcore's shared stash is unavailable.
+
+Glyphs have separate hero storage and equipped views, three named rarities,
+84 item-derived powers, and 27 stat types with tier ceilings. Creating a glyph
+does not equip it. Required Glyph Crafting Power adjustments are explicit.
+Named evolution controls synchronize the saved form, unlock record and minimum
+XP; missing saved heroes are not synthesized. Ascendancy exposes named abilities
+and passive nodes. Charm ownership and five normal per-hero charm loadouts are
+separate controls. Reserved encodings stay out of ordinary gameplay categories.
+
+Source identity remains map 1/326447, cached publication 0.291, archive SHA-256
+`1abc89826cc502f391ec7359d89d78f58f795f01c209eac904a77d3d3abc20cf`.
+The audit used the existing extracted Galaxy scripts and localized item text;
+REA inventoried the derived extraction ZIP, not the unsupported original MPQ.
+Signed synthetic output is tested through the exact bundled browser engine.
+Earlier isolated native tests cover item serialization and slot restoration;
+this rebuild has not been tested in a published Arcade match. Dynamic tooltip
+values remain marked as dynamic rather than presented as computed final stats.
