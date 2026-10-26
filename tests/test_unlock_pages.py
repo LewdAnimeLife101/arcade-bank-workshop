@@ -13,6 +13,19 @@ class UnlockPageTests(unittest.TestCase):
 
     def opened(self,pid):return self.call(op='open',profile=pid,demo=True)
 
+    def reign_history_fixture(self,values):
+        import xml.etree.ElementTree as ET
+        from zrc_editor.demo import demo_bytes,DEMO_PLAYER,DEMO_AUTHOR
+        from zrc_editor.core import signature_for
+        # Omit unit carriers deliberately: these standalone records still work.
+        root=ET.fromstring(demo_bytes())
+        section=ET.SubElement(root,'Section',name='GameTS')
+        for key,value in values.items():
+            ET.SubElement(ET.SubElement(section,'Key',name=key),'Value',int=str(value))
+        root.find('Signature').set('value',signature_for(root,DEMO_PLAYER,DEMO_AUTHOR,'HackersWillBeBanned'))
+        return self.call(op='open',profile='reign',raw=base64.b64encode(ET.tostring(root)).decode(),
+                         name='HackersWillBeBanned.SC2Bank',player=DEMO_PLAYER,author=DEMO_AUTHOR)
+
     def test_every_profile_has_organized_fields_and_coverage(self):
         from arcade_editor.editor_layout import ORDER
         for pid in PROFILES:
@@ -63,6 +76,49 @@ class UnlockPageTests(unittest.TestCase):
             with self.subTest(action=action['action']):
                 opened=self.opened('reign')
                 self.assertTrue(self.call(op='preset',session=opened['session'],action=action['action'])['output'])
+
+    def test_reign_unlock_history_all_heroes_totals_and_reserved_records(self):
+        for action,hours,clears in [('all_full',1290,100),('all_plausible',129,2)]:
+            with self.subTest(action=action):
+                # Reserved history participates in sums but must not be replaced.
+                data=self.reign_history_fixture({'TP6':80,'H6S1':7,'H1S10':19})
+                s=bridge.sessions[data['session']]
+                draft=self.call(op='preset',session=data['session'],action=action)
+                values=s['work'].values;heroes=[h['id'] for h in s['bank'].profile['heroes']]
+                self.assertEqual(len(heroes),11)
+                self.assertEqual(sum(values['GameTS',f'TP{h}'] for h in heroes),hours*3600)
+                self.assertTrue(all(values['GameTS',f'TP{h}']>0 and values['GameTS',f'TP{h}']%20==0 for h in heroes))
+                self.assertEqual(values['GameTS','TP0'],hours*3600+80)
+                for shop in range(1,10):
+                    self.assertTrue(all(values['GameTS',f'H{h}S{shop}']==clears for h in heroes))
+                    self.assertGreaterEqual(values['GameTS',f'H0S{shop}'],sum(values['GameTS',f'H{h}S{shop}'] for h in range(1,13)))
+                self.assertEqual(values['GameTS','TP6'],80)
+                self.assertEqual(values['GameTS','H6S1'],7)
+                self.assertEqual(values['GameTS','H1S10'],19)
+                self.assertGreaterEqual(values['GameTS','HSEC'],9)
+                fresh=self.call(op='open',profile='reign',raw=draft['output'],name=data['name'],player=data['player'],author=data['author'])
+                self.assertEqual([f for f in draft['fields'] if f['category']=='Records'],
+                                 [f for f in fresh['fields'] if f['category']=='Records'])
+                self.assertEqual(s['work'],bridge.sessions[fresh['session']]['bank'].state)
+
+    def test_reign_full_history_preserves_larger_counters_and_is_repeatable(self):
+        data=self.opened('reign');s=bridge.sessions[data['session']]
+        s['work'].values['GameTS','TP1']=9000000
+        s['work'].values['GameTS','H1S1']=400
+        first=self.call(op='preset',session=data['session'],action='all_full')
+        self.assertEqual(s['work'].values['GameTS','TP1'],9000000)
+        self.assertEqual(s['work'].values['GameTS','H1S1'],400)
+        again=self.call(op='preset',session=data['session'],action='all_full')
+        self.assertEqual(first['fields'],again['fields'])
+        self.assertEqual(first['reign'],again['reign'])
+
+    def test_reign_history_overflow_rolls_back_entire_preset(self):
+        data=self.reign_history_fixture({'TP6':2147483647});s=bridge.sessions[data['session']]
+        before=s['work'].clone();levels=dict(s['levels']);evos=dict(s['evos'])
+        result=json.loads(bridge.handle(json.dumps(dict(op='preset',session=data['session'],action='all_full'))))
+        self.assertFalse(result['ok'])
+        self.assertEqual(s['work'],before)
+        self.assertEqual(s['levels'],levels);self.assertEqual(s['evos'],evos)
 
     def test_evolution_lower_records_retain_menu_availability(self):
         states=[]

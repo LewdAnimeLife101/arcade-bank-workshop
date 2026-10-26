@@ -176,6 +176,19 @@ Earlier isolated native tests cover item serialization and slot restoration;
 this rebuild has not been tested in a published Arcade match. Dynamic tooltip
 values remain marked as dynamic rather than presented as computed final stats.
 
+Both Reign Unlock All variants include standalone playtime and shop-clear
+records for all 11 named heroes, even if a hero has no saved inventory yet.
+Full distributes a 1,290-hour floor across them in 20-second ticks and gives
+each at least 100 clears of shops 1–9; larger existing counters remain.
+The lower-record template distributes 129 hours and assigns two clears of
+each supported shop per hero. These are authored values, not natural caps or
+verified play history. Global time and clear totals cover all hero counters,
+including preserved reserved-hero history. Hero 6 and shop 10 are untouched.
+Missing hero units are still not synthesized, and solo dungeon records/times
+remain separate from shop-clear counts. Named manual choices (charm loadouts,
+mutually exclusive ascendancy abilities and equipment preferences) are not
+all selected at once by Unlock All.
+
 All seven profiles now use overview cards and visible category/group buttons.
 The map button returns to the illustrated map dashboard. Account, difficulty,
 tier, effect and loadout choices use searchable, paginated button cards in a
