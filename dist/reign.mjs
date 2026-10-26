@@ -13,9 +13,20 @@ export function inventoryChanges(before,after){
 }
 function pageSlots(panel,slots,ui,key,draw){const pages=Math.ceil(slots.length/24);ui[key]=Math.min(ui[key]||0,Math.max(0,pages-1));if(pages>1)buttons(panel,Array.from({length:pages},(_,i)=>[i,`${i*24+1}–${Math.min(slots.length,(i+1)*24)}`]),ui[key],i=>{ui[key]=i;draw();},'Inventory slot pages');return slots.slice(ui[key]*24,ui[key]*24+24);}
 function buttons(parent,items,current,choose,label){const bar=node('div',undefined,'reign-buttons');bar.setAttribute('role','group');bar.setAttribute('aria-label',label);for(const [id,title] of items){const b=button(title,()=>choose(id));b.setAttribute('aria-pressed',String(String(id)===String(current)));bar.append(b);}parent.append(bar);}
+export function categoryFields(fields,ui){
+ return fields.filter(f=>{
+  if(f.category!==ui.reignCategory)return false;
+  if(ui.reignCategory==='Records')return (ui.reignRecordsScope??'global')==='global'?f.hero==null:String(f.hero)===String(ui.reignRecordsScope);
+  return !['Heroes','Ascendancy','Charms'].includes(ui.reignCategory)||f.hero==null||String(f.hero)===String(ui.reignHero);
+ });
+}
+export function groupChoices(groups,category){
+ const labels=groups.map(g=>g.replace(/^.+? · /,''));
+ return groups.map((g,i)=>[g,labels.filter(x=>x===labels[i]).length>1?g:category==='Records'&&labels[i]==='Records'?'Gameplay records':labels[i]]);
+}
 export function filteredFields(fields,ui,query=''){
  const q=query.toLowerCase().trim();
- return fields.filter(f=>q?`${f.label} ${f.group} ${f.description}`.toLowerCase().includes(q):f.category===ui.reignCategory&&(!['Heroes','Ascendancy','Charms'].includes(ui.reignCategory)||f.hero==null||String(f.hero)===String(ui.reignHero))&&(!ui.reignGroup||f.group===ui.reignGroup));
+ return q?fields.filter(f=>`${f.label} ${f.group} ${f.description}`.toLowerCase().includes(q)):categoryFields(fields,ui).filter(f=>!ui.reignGroup||f.group===ui.reignGroup);
 }
 export function renderReign({current,root,change,modal,action}){
  const {data,ui}=current,r=data.reign;root.replaceChildren();
@@ -37,9 +48,16 @@ export function renderReign({current,root,change,modal,action}){
  }
  if(ui.reignCategory==='Equipment'){renderEquipment(panel,equipment,ui,change,modal,request=>action('reign_equipment',request));return false;}
  if(ui.reignCategory==='Glyphs'){renderGlyphs(panel,glyphs,ui,change,modal,request=>action('reign_glyph',request));return false;}
- const scoped=data.fields.filter(f=>f.category===ui.reignCategory&&(!['Heroes','Ascendancy','Charms'].includes(ui.reignCategory)||f.hero==null||String(f.hero)===String(ui.reignHero)));
+ if(ui.reignCategory==='Records'){
+  const scopes=[['global','Global records'],...r.heroes.map(h=>[h.id,h.name])];
+  if(!scopes.some(([id])=>String(id)===String(ui.reignRecordsScope)))ui.reignRecordsScope='global';
+  buttons(panel,scopes,ui.reignRecordsScope,id=>{ui.reignRecordsScope=id;if(id!=='global')ui.reignHero=id;ui.reignGroup='';ui.query='';ui.page=0;change();},'Whose records');
+  const name=scopes.find(([id])=>String(id)===String(ui.reignRecordsScope))[1];
+  panel.append(node('h3',ui.reignRecordsScope==='global'?'Global records':name+' · Records'),node('p',ui.reignRecordsScope==='global'?'Shared records for this save. Hero records and purchase history are shown under each hero.':'Gameplay records and purchase history for '+name+'. Other heroes’ records are shown separately.','reign-hint'));
+ }
+ const scoped=categoryFields(data.fields,ui);
  const groups=[...new Set(scoped.map(f=>f.group))];if(!groups.includes(ui.reignGroup))ui.reignGroup='';
- if(groups.length>1)buttons(panel,[['','All fields'],...groups.map(g=>[g,g.replace(/^.+? · /,'')])],ui.reignGroup,g=>{ui.reignGroup=g;ui.page=0;change();},'Field groups');
+ if(groups.length>1)buttons(panel,[['','All fields'],...groupChoices(groups,ui.reignCategory)],ui.reignGroup,g=>{ui.reignGroup=g;ui.page=0;change();},'Field groups');
  if(ui.reignCategory==='Ascendancy')panel.append(node('p','Allocate a total point budget first, then choose named ranks. Passive nodes must connect to Skill Points. Review validates the whole tree.','reign-hint'));
  if(ui.reignCategory==='Advanced')panel.append(node('p','Unmapped and reserved records are kept separate from normal gameplay controls. Their descriptions state the known limits.','reign-hint'));
  return true;
