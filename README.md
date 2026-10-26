@@ -10,7 +10,7 @@ that every currently published map accepts edited banks.
 
 Run `python tools/serve.py`, then visit `http://127.0.0.1:8766/`.
 Run `python -m unittest discover -s tests -v` and
-`node --test tests/browser_helpers.test.mjs`.
+`node --test tests/*.test.mjs`.
 No npm install or build step is needed. The exact Python engine shipped in
 `dist/engine.zip` is used by both the bridge tests and browser worker.
 Run `python tools/verify_bundle.py` to verify its reviewed hashes and the public
@@ -19,7 +19,7 @@ data boundary. Its source is contained in the ZIP; extract it to inspect it.
 ## Public-data boundary
 
 There is no bank-upload endpoint, login or network request containing bank data.
-A separate Abacus request counts aggregate public-site page loads; it carries
+A separate Abacus request counts approximate unique public-site browsers; it carries
 only a fixed site counter key. Cookies, referrer, bank/account details and editor
 state are not included. The provider receives ordinary request network metadata. All decoding, validation and signing run in a dedicated local worker
 using the bundled Pyodide runtime. Synthetic examples use fictional handles.
@@ -119,10 +119,15 @@ Original-file validation, manual opening, retained folder selection, independent
 backups, freshness checking and explicit confirmed replacement remain in place.
 
 
-The footer shows **Total visits**, starting 25 October 2026. It counts page loads,
-including repeat visits and refreshes, rather than unique people. Localhost only
-reads the public total; other preview hosts are inactive. There are no historical
-counts to import. Ad blockers, network failures and public counter manipulation
-can affect this approximate total. Counter failure never blocks the editor.
-No external JavaScript is loaded and no counter administration secret is bundled.
+The footer shows **Unique visitors**, starting 26 October 2026 in a separate
+counter. The previous page-load total is preserved, not relabelled as unique.
+A fixed localStorage flag remembers a browser; no visitor ID is generated or sent.
+Refreshes and return visits read the count without incrementing it. Web Locks
+serialize first visits across tabs where available. Different browsers/devices,
+private browsing and cleared storage can count again; this is not unique people.
+Localhost reads only. Other preview hosts are inactive. Blocked storage reads
+only, and the flag is stored before a hit to prevent retries after uncertain
+network failures (which can undercount). Ad blockers and public counter
+manipulation also affect accuracy. Counter failure never blocks the editor.
+No external JavaScript is loaded and no administration secret is bundled.
 Counter API documentation: https://v2.jasoncameron.dev/abacus
