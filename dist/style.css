@@ -59,3 +59,19 @@ footer{flex-wrap:wrap;gap:12px}#visit-count{color:var(--teal);white-space:nowrap
 @media(max-width:950px){.map-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.map-card{padding:19px}.dashboard-note .local{display:none}}
 @media(max-width:600px){.map-cards{grid-template-columns:1fr;gap:13px}.map-card{min-height:220px}.map-card-top{margin-bottom:15px}.collection-heading{align-items:flex-start}.collection-heading h2{font-size:25px}.collection-count{padding:6px 9px;font-size:10px}.collection-heading p{max-width:25ch}.dashboard-note{padding:16px;gap:12px}header{height:auto;min-height:80px;gap:8px;flex-wrap:wrap;padding-block:13px}nav{flex-wrap:wrap}.intro{padding-bottom:25px}}
 @media(prefers-reduced-motion:reduce){.map-card{transition:none}.map-card:hover{transform:none}}
+
+#welcome{max-width:560px;padding:28px;border-color:#40616a;background:radial-gradient(ellipse at top right,#26413e80,transparent 70%),#142129}
+#welcome::backdrop{background:#040b10de;backdrop-filter:blur(8px)}
+.welcome-icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:16px;color:var(--mint);background:#24403e;border:1px solid #46635b;border-radius:11px;font-size:26px}
+#welcome h2{font-size:32px;line-height:1.15;letter-spacing:-.8px;margin:12px 0 18px;font-weight:600}
+#welcome h2 em{color:var(--mint);font-style:normal}
+#welcome-description{line-height:1.7;margin-bottom:16px}
+.welcome-location{display:flex;flex-direction:column;gap:7px;padding:17px 19px;background:#0e191f;border:1px solid #30444e;border-radius:8px}
+.welcome-location>span{color:var(--teal);font-size:9px;letter-spacing:1.5px}.welcome-location strong{font-size:14px;font-weight:500}.welcome-location small{color:var(--muted);font-size:11px;line-height:1.7}
+#welcome-status{min-height:20px;font-size:12px;margin:14px 0;color:var(--mint)}#welcome-status.error{color:#ffc8b7}
+.welcome-actions{display:flex;flex-direction:column;gap:9px}.welcome-actions .primary{width:100%;padding:14px 18px;text-align:center;font-size:14px}.welcome-actions .primary span{float:right}
+.welcome-skip{border:0;background:transparent;font-size:12px;color:var(--muted)}
+#welcome .welcome-footnote{font-size:10px;text-align:center;margin:14px 0 0;line-height:1.6}
+.dashboard-note button{margin-left:auto;white-space:nowrap;font-size:12px;flex-shrink:0}
+.map-card-bank-count{font-size:11px;color:var(--teal);margin:-12px 0 16px}
+@media(max-width:600px){#welcome{padding:26px 22px}#welcome h2{font-size:28px}.dashboard-note{flex-wrap:wrap}.dashboard-note p{flex:1}.dashboard-note button{width:100%;margin:0}}

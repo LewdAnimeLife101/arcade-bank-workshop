@@ -7,13 +7,13 @@ const {accountLabels,accountName,isAccountShortcut,readAccountShortcut,addAccoun
 const profiles=await (await fetch('profiles.json?v='+release,{cache:'no-store'})).json();
 $('profile-count').textContent=String(profiles.length).padStart(2,'0')+' map profiles';
 const folderSelection=new FolderSelection(profiles);
-let profile=profiles[0],current=null,entries=[],account='all',page=0,busy=false;
+let profile=profiles[0],current=null,entries=[],account='all',page=0,busy=false,folderReady=false;
 const sessions=new Map(),selectedSessions=new Map(),requests=new Map();let sequence=0;
 const worker=new Worker('worker.js?v='+release,{type:'module'});
 const ready=new Promise((resolve,reject)=>{worker.onmessage=({data})=>{if(data.ready){$('engine-state').textContent='Local engine ready';$('engine-detail').textContent=profiles.length+' audited codecs · browser only';$('engine-dot').textContent='●';resolve();}else if(data.fatal){$('engine-state').textContent='Engine could not start';message(data.fatal,true);reject(Error(data.fatal));}else{const pending=requests.get(data.id);if(pending){requests.delete(data.id);data.ok?pending.resolve(data.data):pending.reject(Error(data.error));}}};worker.onerror=e=>{message('Local engine failed: '+(e.message||'Worker startup error')+' ('+(e.filename||'worker')+':'+(e.lineno||0)+')',true);reject(Error(e.message));};});
 ready.catch(()=>{});
 async function rpc(request){await ready;return new Promise((resolve,reject)=>{const id=++sequence;requests.set(id,{resolve,reject});worker.postMessage({id,request});});}
-function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);$('dashboard-message').textContent=error?text:'';if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
+function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);$('dashboard-message').textContent=error?text:'';if(error&&$('welcome').open)welcomeStatus(text,true);if(error&&$('dialog').open){let note=$('dialog-error');if(!note){note=el('p',undefined,'error');note.id='dialog-error';note.setAttribute('role','alert');$('dialog-content').append(note);}note.textContent=text;}}
 async function task(fn){if(busy)return;busy=true;document.body.setAttribute('aria-busy','true');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=true;try{await fn();}catch(e){if(e.name!=='AbortError')message(e.message||String(e),true);}finally{busy=false;document.body.removeAttribute('aria-busy');for(const node of document.querySelectorAll('main,header,dialog'))node.inert=false;}}
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 function option(value,label){const n=el('option',label);n.value=value;return n;}
@@ -48,7 +48,9 @@ function renderDashboard(){
   const bottom=el('span',undefined,'map-card-bottom');const retained=[...sessions.values()].filter(s=>s.data.profile===p.id);
   const pending=retained.some(s=>s.pending.size||s.data.dirty);
   bottom.append(el('span',pending?'Edits in progress':retained.length?'Session open':'Open editor'),el('span','↗'));
-  if(pending)card.classList.add('has-edits');card.onclick=()=>chooseMap(p.id);card.append(top,name,description,bottom);$('map-cards').append(card);
+  if(pending)card.classList.add('has-edits');card.onclick=()=>chooseMap(p.id);card.append(top,name,description);
+  if(folderReady){const count=entries.filter(e=>!e.backup&&e.profile===p.id).length;card.append(el('span',count?count+' current bank'+(count===1?'':'s')+' found':'No current bank found','map-card-bank-count'));}
+  card.append(bottom);$('map-cards').append(card);
  }
 }
 $('map').onchange=()=>chooseMap($('map').value);
@@ -160,13 +162,34 @@ function renderBanks(){
  if(entries.length&&!filtered.length)list.append(el('small','No current main bank found for this map and account. Nested copies and backups are excluded.'));
 }
 function folderStatus(text){$('folder-status').textContent=text;$('rescan-folder').hidden=!folderSelection.root;}
+function welcomeStatus(text,error=false){$('welcome-status').textContent=text;$('welcome-status').classList.toggle('error',error);}
+function finishFolderSelection(){
+ folderReady=true;renderDashboard();
+ $('dashboard-folder-status').textContent=entries.length+' current bank'+(entries.length===1?'':'s')+' found across your accounts. Choose a map to see its saves.';
+ $('dashboard-folder').textContent='Change folder';
+ $('welcome').close();
+}
+function skipFolderSelection(){if(busy)return;$('welcome').close();$('dashboard-title').focus({preventScroll:true});}
+function pickFolder(){welcomeStatus('Choose your StarCraft II folder in Documents or OneDrive.');return task(()=>scanFolder());}
+$('welcome-folder').onclick=pickFolder;
+$('dashboard-folder').onclick=pickFolder;
+$('welcome-skip').onclick=skipFolderSelection;
+$('welcome').addEventListener('cancel',event=>{event.preventDefault();skipFolderSelection();});
+$('welcome-reconnect').onclick=()=>task(async()=>{
+ const root=folderSelection.root;if(!root)return;
+ welcomeStatus('Requesting access to your remembered folder…');
+ if(await root.requestPermission({mode:'read'})!=='granted'){welcomeStatus('Access was not granted. Try reconnecting or select a different folder.',true);return;}
+ await scanFolder(root);
+});
 async function scanFolder(root){
  if(!window.showDirectoryPicker){$('folder-fallback').click();return;}
- root=root||await showDirectoryPicker({mode:'read',id:'starcraft-banks'});
+ try{root=root||await showDirectoryPicker({mode:'read',id:'starcraft-banks'});}catch(error){if(error.name==='AbortError'){welcomeStatus('No folder selected. Choose a folder when you’re ready, or continue without one.');return;}throw error;}
+ welcomeStatus('Finding current banks for all supported maps…');
  entries=await folderSelection.scan(root);refreshAccounts();renderBanks();
  let suffix='';try{await rememberedFolder('put',root);}catch{suffix=' Remembered for this tab only.';}
  folderStatus('Selected: '+root.name+'. Shared by all map profiles.'+suffix);
  message(`Found ${entries.length} main bank file(s). Nested copies and backups are excluded. No files changed.`);
+ finishFolderSelection();
 }
 $('folder').onclick=()=>task(()=>scanFolder());
 $('rescan-folder').onclick=()=>task(async()=>{
@@ -182,21 +205,25 @@ async function restoreFolder(){
   if(await root.queryPermission({mode:'read'})==='granted'){
    entries=await folderSelection.scan();refreshAccounts();renderBanks();
    folderStatus('Selected: '+root.name+'. Shared by all map profiles.');
-  }else folderStatus('Remembered: '+root.name+'. Click Refresh banks to reconnect.');
- }catch{folderStatus('Select your Starcraft folder to reconnect.');}
+   finishFolderSelection();
+  }else{folderStatus('Remembered: '+root.name+'. Click Refresh banks to reconnect.');$('welcome-reconnect').hidden=false;welcomeStatus('Your folder is remembered. Reconnect it to find your current banks.');}
+ }catch{folderStatus('Select your Starcraft folder to reconnect.');welcomeStatus('Your previous folder could not be read. Select it again to reconnect.',true);}
 }
 $('folder-fallback').onchange=()=>task(async()=>{
- entries=[];
+ if(!$('folder-fallback').files.length)return;
+ welcomeStatus('Finding current banks for all supported maps…');const found=[];
  for(const file of $('folder-fallback').files){
   const relative=file.webkitRelativePath,parts=relative.split('/');
   // Match the native walk: every directory transition must be canonical.
   if(parts.slice(1,-1).some((name,i)=>!shouldScanDirectory(parts.slice(0,i+1).join('/'),name)))continue;
   if(isAccountShortcut(parts.slice(0,-1).join('/'),file.name)){try{addAccountName(folderSelection.accountNames,await readAccountShortcut(file));}catch{}}
-  const entry=currentBankCandidate(relative,profiles);if(entry)entries.push({...entry,file});
+  const entry=currentBankCandidate(relative,profiles);if(entry)found.push({...entry,file});
  }
+ entries=found;
  folderSelection.root=null;$('rescan-folder').hidden=true;folderStatus('Folder selected. Shared by all map profiles in this tab.');
  refreshAccounts();renderBanks();
  message(`Found ${entries.length} main bank file(s). Nested copies and backups are excluded. This browser can export copies; direct replacement requires Chrome or Edge file access.`);
+ finishFolderSelection();
 });
 async function openEntry(entry){const old=sessions.get(sessionKey(entry.account,entry.profile,entry.author,entry.name));if(old&&(old.data.dirty||old.pending.size)){message('Resumed this bank’s pending edits. Reset that session before re-reading its disk file.');selectedSessions.set(cacheKey(entry.account,entry.profile),sessionKey(entry.account,entry.profile,entry.author,entry.name));account=entry.account;profile=profiles.find(p=>p.id===entry.profile);$('map').value=profile.id;refreshAccounts();switchSession();return;}
  const file=entry.handle?await entry.handle.getFile():entry.file;if(file.size>4194304)throw Error('Banks must be no larger than 4 MB.');const bytes=new Uint8Array(await file.arrayBuffer());const data=await rpc({op:'open',profile:entry.profile,raw:b64(bytes),name:entry.name,player:entry.player,author:entry.author});keep();account=entry.account;profile=profiles.find(p=>p.id===entry.profile);current={data,account,handle:entry.handle||null,backup:entry.backup,original:bytes,pending:new Map(),output:null};keep();$('map').value=profile.id;refreshAccounts();page=0;message('Original checks passed. Edit a field, then review your changes.');render();renderBanks();}
@@ -212,5 +239,8 @@ $('backups').onclick=()=>task(async()=>{const records=(await vault('all')).sort(
 $('guide').onclick=()=>{const box=modal('Your bank, step by step');for(const [title,text] of [['1. Choose your map','Choose one of our version-specific profiles. Match the displayed map version; a bank does not prove which map release wrote it.'],['2. Find your account','Select the StarCraft II folder under Documents or OneDrive. The site detects bank folders and keeps accounts and map authors separate. Or open a file and enter its original handles.'],['3. Edit and review','Fields show known bounds and descriptions. Validation applies the same codecs as our desktop editor. Review presets before exporting; unsupported original data is preserved or rejected.'],['4. Save outside a match','Export a copy in any supported browser. Chrome and Edge can also replace a file you explicitly opened, after original-change checks, a verified recovery backup and your per-save main-menu confirmation.'],['Privacy and persistence','Files are processed locally. Unsaved editing sessions live in memory and are lost when the page closes. The selected folder is shared across profiles. Chrome and Edge can remember its handle across visits, subject to browser permission. Unsaved edits are not retained after closing the page. Replacement backups persist in the local Recovery vault; they are not uploaded.'],['Compatibility','Map updates, account restrictions and game logic can still reject offline-valid saves. This tool does not grant staff access. Fallen World’s profile is 0.84; 0.85 account restrictions cannot be removed by editing a bank.']])box.append(el('h3',title),el('p',text));};
 window.addEventListener('beforeunload',e=>{if([...sessions.values()].some(s=>s.data.dirty||s.pending.size)){e.preventDefault();e.returnValue='';}});
 render();
-
+$('welcome').showModal();
+welcomeStatus('Checking for a remembered folder…');
 await task(restoreFolder);
+if($('welcome').open&&$('welcome-status').textContent==='Checking for a remembered folder…')welcomeStatus('Folder access stays in your browser. Your bank files are never uploaded.');
+if($('welcome').open)$('welcome-folder').focus();

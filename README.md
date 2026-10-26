@@ -40,6 +40,12 @@ Multiple canonical candidates remain separate and show their relative paths;
 timestamps never decide which account, author or mode to use.
 Manual file opening remains available. Switching maps/accounts preserves edits
 in memory; separate main filenames and authors have separate sessions.
+New visitors first see a folder-selection welcome dialog. A successful scan
+closes it and lists the current-bank counts on the map dashboard. Selecting a
+map shows its already-discovered banks; scanning never auto-opens or writes them.
+A remembered folder with granted read permission is rescanned on return, skipping
+the welcome step. If permission expired, a user gesture can reconnect it.
+Cancellation keeps the welcome step open; manual-file users can skip it.
 The initial map dashboard uses the same profile registry as the editor selector.
 All maps returns to that dashboard without discarding sessions or folder access;
 cards show when a profile has edits in progress. Refresh starts at the dashboard.
