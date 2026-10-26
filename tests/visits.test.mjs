@@ -12,7 +12,7 @@ function fixture(){
 }
 async function page(f,overrides={}){
  const output={textContent:''};
- await vm.runInNewContext(source,{document:{getElementById:()=>output},location:{hostname:'lewdanimelife101.github.io',pathname:'/arcade-bank-workshop/'},localStorage:f.localStorage,navigator:f.navigator,fetch:f.fetch,AbortSignal,...overrides});
+ await vm.runInNewContext(source,{document:{getElementById:()=>output},location:{hostname:'starcraft-bank.github.io',pathname:'/2026-bank-editor/'},localStorage:f.localStorage,navigator:f.navigator,fetch:f.fetch,AbortSignal,...overrides});
  return output.textContent;
 }
 test('return visits and refreshes increment a browser only once',async()=>{
@@ -26,7 +26,7 @@ test('simultaneous tabs share a single first-visit count',async()=>{
 });
 test('localhost reads only and unrelated preview hosts make no request',async()=>{
  const f=fixture();await page(f,{location:{hostname:'127.0.0.1',pathname:'/'}});assert.equal(f.values.size,0);assert.ok(f.calls[0].url.includes('/get/'));
- await page(f,{location:{hostname:'preview.example',pathname:'/arcade-bank-workshop/'}});assert.equal(f.calls.length,1);
+ await page(f,{location:{hostname:'preview.example',pathname:'/2026-bank-editor/'}});assert.equal(f.calls.length,1);
 });
 test('blocked storage never increments on repeated visits',async()=>{
  const f=fixture(),blocked={getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}};

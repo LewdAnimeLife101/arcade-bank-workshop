@@ -1,9 +1,10 @@
 // Approximate unique browsers. No identity, bank data or editor state is sent.
+// Keep the existing counter key so renaming the site retains its total.
 const counter = 'lewdanimelife101.github.io/arcade-bank-workshop-unique-browsers';
 const marker = 'arcade-bank-workshop:unique-visitor:v1';
 const output = document.getElementById('visit-count');
-const live = location.hostname === 'lewdanimelife101.github.io' &&
-  (location.pathname === '/arcade-bank-workshop' || location.pathname.startsWith('/arcade-bank-workshop/'));
+const live = location.hostname === 'starcraft-bank.github.io' &&
+  (location.pathname === '/2026-bank-editor' || location.pathname.startsWith('/2026-bank-editor/'));
 const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 async function updateCounter() {
   let operation = 'get';

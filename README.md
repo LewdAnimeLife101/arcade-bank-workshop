@@ -1,5 +1,7 @@
 # Arcade Bank Workshop
 
+Public website: https://starcraft-bank.github.io/2026-bank-editor/
+
 Public browser-local edition of our Arcade Bank Editor. Seven registry profiles
 are included: Unity 0.928, Liberty 0.233, Mineralz 2.62, Reign of Chaos 0.291,
 Fallen World 0.84, MineralZ Evolution [Updated] 2.58 and Probes vs Zealot 2 Updated 2.118. No game assets were copied from the
@@ -131,3 +133,8 @@ network failures (which can undercount). Ad blockers and public counter
 manipulation also affect accuracy. Counter failure never blocks the editor.
 No external JavaScript is loaded and no administration secret is bundled.
 Counter API documentation: https://v2.jasoncameron.dev/abacus
+
+The GitHub repository is `Starcraft-Bank/2026-bank-editor`. The counter key
+remains unchanged to retain its total. Browser permissions and storage belong to
+the origin: visitors must select their folder again on the new hostname, and
+local recovery backups are not transferred between hostnames.
