@@ -1,4 +1,4 @@
-import {currentBankCandidate,shouldScanDirectory} from './discovery.mjs';
+import {currentBankCandidate,shouldScanDirectory} from './discovery.mjs?v=fallen089';
 const {isAccountShortcut,readAccountShortcut,addAccountName}=await import('./account-names.mjs?v='+(new URL(import.meta.url).searchParams.get('v')||'1'));
 
 // One folder and one scan serve every profile. Switching maps never requests
@@ -18,7 +18,7 @@ export class FolderSelection {
             try{addAccountName(names,await readAccountShortcut(await handle.getFile()));}catch{/* Missing name metadata does not block bank discovery. */}
           }
           const entry=currentBankCandidate(path+'/'+name,this.profiles);
-          if(entry)found.push({...entry,handle});
+          if(entry)found.push({...entry,handle,directory:dir});
         }
       }
     };

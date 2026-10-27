@@ -1,7 +1,7 @@
 [
   {
     "id": "unity",
-    "label": "Zombie World Unity · 0.928",
+    "label": "Zombie World Unity \u00b7 0.928",
     "name": "Zombie World Unity",
     "version": "0.928",
     "map": 293070,
@@ -18,7 +18,7 @@
   },
   {
     "id": "liberty",
-    "label": "Zombie World Liberty · 0.233",
+    "label": "Zombie World Liberty \u00b7 0.233",
     "name": "Zombie World Liberty",
     "version": "0.233",
     "map": 345748,
@@ -35,7 +35,7 @@
   },
   {
     "id": "mineralz",
-    "label": "Mineralz Survival 2 · 2.62",
+    "label": "Mineralz Survival 2 \u00b7 2.62",
     "name": "Mineralz Survival 2",
     "version": "2.62",
     "map": 369775,
@@ -55,7 +55,7 @@
   },
   {
     "id": "reign",
-    "label": "Zombie World: Reign of Chaos · 0.291",
+    "label": "Zombie World: Reign of Chaos \u00b7 0.291",
     "name": "Zombie World: Reign of Chaos",
     "version": "0.291",
     "map": 326447,
@@ -74,12 +74,12 @@
   },
   {
     "id": "fallen",
-    "label": "Fallen World: Last Stand New Beginning · 0.84",
+    "label": "Fallen World: Last Stand New Beginning \u00b7 0.89",
     "name": "Fallen World: Last Stand New Beginning",
-    "version": "0.84",
+    "version": "0.89",
     "map": 379420,
     "filename": "FWLSBank.SC2Bank",
-    "description": "Saved skill progression, hero XP, tier unlocks, trophies and records.",
+    "description": "Skill progression, heroes, trophies and records with coordinated 0.89 main/comparison bank saves.",
     "mainNames": [
       "FWLSBank"
     ],
@@ -89,11 +89,18 @@
     "nativeBackupNames": [
       "FWLSBank"
     ],
-    "cardDescription": "Skill tiers, hero XP, trophies and saved loadouts."
+    "cardDescription": "Skill tiers, hero XP, trophies and saved loadouts.",
+    "companionNames": [
+      "FWLSBank2",
+      "FWLSBankChk"
+    ],
+    "recoveryNames": [
+      "FWLSBankSnap"
+    ]
   },
   {
     "id": "mineralz_evolution_258",
-    "label": "MineralZ Evolution [Updated] · 2.58 · Offline tested",
+    "label": "MineralZ Evolution [Updated] \u00b7 2.58 \u00b7 Offline tested",
     "name": "MineralZ Evolution [Updated]",
     "version": "2.58",
     "map": 344126,
@@ -116,7 +123,7 @@
   },
   {
     "id": "probes_zealot_2118",
-    "label": "Probes vs Zealot 2 Updated · 2.118 · Offline tested",
+    "label": "Probes vs Zealot 2 Updated \u00b7 2.118 \u00b7 Offline tested",
     "name": "Probes vs Zealot 2 Updated",
     "version": "2.118",
     "map": 308522,

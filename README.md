@@ -4,7 +4,7 @@ Public website: https://starcraft-bank.github.io/2026-bank-editor/
 
 Public browser-local edition of our Arcade Bank Editor. Seven registry profiles
 are included: Unity 0.928, Liberty 0.233, Mineralz 2.62, Reign of Chaos 0.291,
-Fallen World 0.84, MineralZ Evolution [Updated] 2.58 and Probes vs Zealot 2 Updated 2.118. No game assets were copied from the
+Fallen World 0.89, MineralZ Evolution [Updated] 2.58 and Probes vs Zealot 2 Updated 2.118. No game assets were copied from the
 reference restorer website. These are audited source versions, not a claim
 that every currently published map accepts edited banks.
 
@@ -62,7 +62,7 @@ copies from Recovery vault. No game process is manipulated.
 ## Limitations
 
 Profile checks do not prove live acceptance or establish the map publication
-that wrote a bank. Fallen World's 0.85 account restrictions are enforced by the
+that wrote a bank. Fallen World's 0.89 account restrictions are enforced by the
 map and cannot be removed by bank editing. Extras purchases are session-only.
 Original unknown fields are handled by the existing codecs; unsupported data is
 preserved or rejected rather than guessed. The website does not change ownership.
@@ -73,7 +73,7 @@ Third-party runtime licenses and source URLs are in `dist/THIRD-PARTY.txt`.
 
 Fallen World's funded-skills action takes the visitor's existing FWLSBank2,
 preserves other slots/settings, and exports a reviewed ZIP containing both banks.
-It does not replace half of a two-file dependency. Install both together outside
+The export also includes the matching signed FWLSBankChk comparison bank. Install all three together outside
 a match after retaining independent originals. It reports the affordable Special
 ranks and the session-only Extras purchases explicitly.
 
@@ -196,3 +196,33 @@ dialog; no native select menus or datalists remain in the owned interface.
 Long collections such as Liberty's 100 jewel slots use group search and pages.
 Selection values, bank validation, staged edits, discovery and save checks are
 unchanged. Reign's nested glyph form uses the same choice component.
+
+## Fallen World 0.89 coordinated saves
+
+The main bank encoding and saved skill-loadout layout are unchanged, but the map
+now compares tracked progression against FWLSBankChk. Normal exports include the
+main and signed comparison bank together; funded-skills exports also include
+FWLSBank2. The comparison record is checked against the exact player, author and
+filename, and unknown existing XML is preserved. FWLSBankSnap and historical
+backups are not changed. Native folder discovery locates the companion in the
+same canonical author folder without listing it as a main bank. Manual opening
+and explicit new-comparison ZIP export remain available.
+
+New output enforces ascensions 0–1000 and legacy total XP zero. Older originals
+with these anomalies can be opened for explicit correction; no silent clamp or
+normalization is applied. Current XP must fit the level. The ascension bound is
+a source-derived flagging threshold, not an established natural earned cap.
+Both Unlock All variants require this paired workflow; authored statistics are
+not earned-history evidence. Public profiles and the Ascension stats column make
+these values visible to other players. Pirate Ship crit/multicrit limiting is
+runtime logic and is not bypassed by raising saved stats.
+
+Direct paired replacement requires two existing files in the same selected bank
+folder. Both originals are independently backed up and verified before any write.
+All outputs are staged, freshness is rechecked, and commits are read back. Because
+the browser has no atomic multi-file commit, partial failure attempts a verified
+rollback without overwriting a concurrent external change. Both originals remain
+in Recovery vault. Missing companions use ZIP export for coordinated installation.
+Keep SC2 closed or at its main menu outside every match until the entire save is
+complete. Offline tests cover the audited comparison and range checks, not live
+acceptance, map-side account restrictions, or comparison against historical saves.

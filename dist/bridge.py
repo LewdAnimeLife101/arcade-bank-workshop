@@ -9,6 +9,24 @@ from arcade_editor import preset_catalog
 
 sessions={}
 
+def fallen_mirror(req):
+    value=req.get('mirror')
+    if value is None:return None
+    raw=base64.b64decode(value,validate=True)
+    if len(raw)>4*1024*1024:raise ValueError('Comparison bank exceeds 4 MB.')
+    return raw
+
+def fallen_archive(s, main, mirror, *, companion=None, notes=''):
+    import io,zipfile
+    package=io.BytesIO()
+    with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as archive:
+        prefix='demo-' if s['demo'] else ''
+        archive.writestr(prefix+'FWLSBank.SC2Bank',main)
+        archive.writestr(prefix+'FWLSBankChk.SC2Bank',mirror)
+        if companion is not None:archive.writestr(prefix+'FWLSBank2.SC2Bank',companion)
+        archive.writestr('READ-ME.txt','Fallen World 0.89 coordinated save\n\n'+notes+'\n\nBack up every original outside SC2 bank folders. While SC2 is closed or at its main menu outside all matches, install ALL included banks in the same original player/map-author folder, retaining exact filenames. Do not delete or overwrite FWLSBankSnap or rotating backups. Snapshots preserve prior history. Synthetic examples must not be installed. Correct signatures and a matching comparison record do not remove map-side account restrictions or prove live acceptance.\n')
+    return base64.b64encode(package.getvalue()).decode()
+
 def construct(pid,raw,name,player,author):
     if not all(re.fullmatch(r'[0-9]+-S2-[0-9]+-[0-9]+', value) for value in (player,author)):
         raise ValueError('Both original account handles are required.')
@@ -216,10 +234,25 @@ def dispatch(req):
         s={'id':uuid.uuid4().hex,'profile':pid,'bank':bank,'work':bank.state.clone(),'name':name,'player':player,'author':author,'demo':bool(req.get('demo')),'levels':{},'evos':{},'undo':[]}
         sessions[s['id']]=s;return result(s)
     s=sessions[req['session']]
+    if op=='fallen_bundle':
+        if s['profile']!='fallen':raise ValueError('This action is only available for Fallen World.')
+        from fwls_editor.guard import render_guard,inspect_guard
+        plan=dict(s);plan['work']=s['work'].clone();plan['levels']=dict(s['levels']);plan['evos']=dict(s['evos'])
+        apply_edits(plan,req.get('edits',{}))
+        main,target,notes=render(plan,plan['work'])
+        original=fallen_mirror(req)
+        mirror,guard_notes=render_guard(s['bank'],target,original)
+        fresh=construct('fallen',main,s['name'],s['player'],s['author'])
+        check=inspect_guard(fresh,mirror)
+        if check['code']!=0:raise ValueError('The coordinated save did not pass the source-derived Bank Guard checks.')
+        notes=list(notes)+list(guard_notes)
+        return {'archive':fallen_archive(s,main,mirror,notes='\n'.join(notes)),
+                'output':base64.b64encode(main).decode(),'guardOutput':base64.b64encode(mirror).decode(),
+                'notes':notes,'guard':check}
     if op=='funded_skills':
         if s['profile']!='fallen':raise ValueError('This preset is only available for Fallen World.')
         from fwls_editor.skill_preset import funded,render_companion
-        import io,zipfile
+        from fwls_editor.guard import render_guard,inspect_guard
         companion=base64.b64decode(req['companion'],validate=True)
         if len(companion)>4*1024*1024:raise ValueError('Companion exceeds 4 MB.')
         # Build a separate export plan. Never silently change a session's main bank.
@@ -228,13 +261,11 @@ def dispatch(req):
         target,loadout,notes=funded(plan['work'],s['bank'].profile,req.get('priority','Income & experience'))
         main,_,_=render(plan,target)
         other=render_companion(companion,int(req['slot']),loadout,auto=True)
-        package=io.BytesIO()
-        with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as archive:
-            prefix='demo-' if s['demo'] else ''
-            archive.writestr(prefix+'FWLSBank.SC2Bank',main)
-            archive.writestr(prefix+'FWLSBank2.SC2Bank',other)
-            archive.writestr('READ-ME.txt','Fallen World funded skills export\n\n'+notes+'\n\nBack up both original files outside your SC2 bank folders. Exit every match before installing BOTH files together in the same player and map-author folder. This website did not replace either original. Synthetic examples must not be installed. Account ownership is unchanged. Offline validation does not guarantee acceptance by an updated map.\n')
-        return {'archive':base64.b64encode(package.getvalue()).decode(),'notes':notes}
+        mirror,guard_notes=render_guard(s['bank'],target,fallen_mirror(req))
+        fresh=construct('fallen',main,s['name'],s['player'],s['author'])
+        if inspect_guard(fresh,mirror)['code']!=0:raise ValueError('Funded save did not pass the source-derived Bank Guard checks.')
+        notes+='\n\n'+'\n'.join(guard_notes)
+        return {'archive':fallen_archive(s,main,mirror,companion=other,notes=notes),'notes':notes}
     if op=='undo':
         if s['undo']:s['work'],s['levels'],s['evos']=s['undo'].pop()
         return result(s)
