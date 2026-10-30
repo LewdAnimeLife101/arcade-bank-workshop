@@ -1,3 +1,5 @@
+[![Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/pC4n2fvrmD)
+
 # Arcade Bank Workshop
 
 Public website: https://starcraft-bank.github.io/2026-bank-editor/
